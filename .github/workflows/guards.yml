@@ -1,0 +1,61 @@
+name: guards
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  attribution:
+    name: no machine attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refuse machine attribution in the commit range
+        run: |
+          range="origin/${{ github.base_ref }}..HEAD"
+          if git log --format='%B' "$range" \
+             | grep -inE 'co-authored-by:.*(claude|anthropic)|generated with .*claude'; then
+            echo "::error::machine attribution in the commit range"
+            exit 1
+          fi
+      - name: Report every author and committer in the range
+        run: git log --format='%an <%ae>%n%cn <%ce>' "origin/${{ github.base_ref }}..HEAD" | sort -u
+
+  commits:
+    name: conventional commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+      - name: Lint the commit range
+        run: npx commitlint --from "origin/${{ github.base_ref }}" --to HEAD --verbose
+
+  pr-title:
+    name: conventional pull-request title
+    runs-on: ubuntu-latest
+    steps:
+      # Without the checkout the config file is absent and commitlint fails on
+      # every title, valid ones included. A job that cannot pass is not a check.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+      # A squash merge takes the pull-request title as the commit subject, so a
+      # repository that lints only commits has an unenforced convention that
+      # looks enforced. Runs on `edited` too: a title changed after a green
+      # check is otherwise never re-checked.
+      - name: Lint the pull-request title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s' "$TITLE" | npx commitlint --verbose
