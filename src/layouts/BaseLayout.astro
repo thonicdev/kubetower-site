@@ -1,0 +1,121 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/jetbrains-mono';
+import '~/styles/global.css';
+
+import Header from '~/components/Header.astro';
+import Footer from '~/components/Footer.astro';
+import Toast from '~/components/ui/Toast.astro';
+import { site } from '~/config/site';
+import { withBase } from '~/lib/paths';
+
+interface Props {
+  /** Page name. The site name is appended, except on the home page. */
+  title: string;
+  description?: string;
+  /** Home sets this so the title is not "kubetower — kubetower". */
+  bare?: boolean;
+  /** Skips the page padding the fixed header otherwise needs. */
+  flush?: boolean;
+}
+
+const { title, description = site.description, bare = false, flush = false } = Astro.props;
+
+const fullTitle = bare ? title : `${title} — ${site.titleSuffix}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <meta name="theme-color" content="#0a0e17" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+
+  <body
+    class="relative flex min-h-screen flex-col bg-background font-sans text-on-surface antialiased selection:bg-primary/30 selection:text-primary"
+  >
+    <a
+      href="#main"
+      class="sr-only rounded-lg bg-primary px-4 py-2 font-mono text-xs text-on-primary focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60]"
+    >
+      Skip to content
+    </a>
+
+    <Header />
+
+    <main id="main" class:list={['w-full flex-1', !flush && 'pt-16']}>
+      <slot />
+    </main>
+
+    <Footer />
+    <Toast />
+
+    <script>
+      import { showToast } from '~/lib/toast';
+
+      /* The spotlight border follows the pointer through two custom properties
+         the stylesheet reads. Skipped on touch, where there is no hover to
+         follow and the listener would only cost work on scroll. */
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        for (const card of document.querySelectorAll<HTMLElement>('.spotlight')) {
+          card.addEventListener('pointermove', (event) => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--spotlight-x', `${event.clientX - rect.left}px`);
+            card.style.setProperty('--spotlight-y', `${event.clientY - rect.top}px`);
+          });
+        }
+      }
+
+      /* One delegated handler for every copy button on the page, so a new one
+         needs no script of its own. */
+      document.addEventListener('click', async (event) => {
+        const target = event.target as HTMLElement | null;
+        const button = target?.closest<HTMLButtonElement>('button[data-copy]');
+        if (!button) return;
+
+        const text = button.dataset.copy;
+        if (!text) return;
+
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          showToast('Could not reach the clipboard — copy it by hand.');
+          return;
+        }
+
+        const label = button.querySelector<HTMLElement>('[data-copy-label]');
+        const idle = button.querySelector<HTMLElement>('[data-copy-icon]');
+        const done = button.querySelector<HTMLElement>('[data-copy-done]');
+        const previous = label?.textContent;
+
+        if (label) label.textContent = 'Copied';
+        idle?.classList.add('hidden');
+        done?.classList.remove('hidden');
+        button.classList.add('border-primary/50', 'bg-primary/10');
+        showToast(`Copied: ${text.length > 42 ? `${text.slice(0, 42)}…` : text}`);
+
+        setTimeout(() => {
+          if (label && previous) label.textContent = previous;
+          idle?.classList.remove('hidden');
+          done?.classList.add('hidden');
+          button.classList.remove('border-primary/50', 'bg-primary/10');
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

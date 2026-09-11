@@ -1,0 +1,17 @@
+<!--
+  The same icon, drawn for a maskable slot.
+
+  Android and Windows crop an installed app's icon to whatever shape the
+  platform uses — circle, squircle, rounded square. A maskable icon must
+  therefore be full-bleed, with everything that matters inside the central 80%
+  the platform promises not to cut. Hence no rounded corners here, and the deck
+  scaled down to sit well inside that safe zone.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="KubeTower">
+  <rect width="512" height="512" fill="#101828"/>
+  <g transform="translate(256 256) scale(0.72) translate(-256 -256)">
+    <path d="M256 249 L406 324 L256 399 L106 324 Z" fill="#1d47a6"/>
+    <path d="M256 181 L406 256 L256 331 L106 256 Z" fill="#3b7ae8"/>
+    <path d="M256 113 L406 188 L256 263 L106 188 Z" fill="#6ea0ff"/>
+  </g>
+</svg>

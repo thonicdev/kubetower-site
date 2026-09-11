@@ -1,0 +1,100 @@
+---
+/**
+ * The GitHub button: a link to the repository, with its star count fetched by
+ * the visitor's browser.
+ *
+ * Fetched client-side rather than baked in at build time so the number is
+ * current between deploys — a static site rebuilt once a month would otherwise
+ * show a month-old count. The trade is one request to api.github.com per
+ * visitor, which is the only third-party request the site makes.
+ *
+ * The count is hidden until it arrives, and stays hidden if it does not: the
+ * anonymous API returns 404 for a private repository and 403 once an IP passes
+ * 60 requests an hour, and a button reading "Star |" with nothing after the
+ * divider is worse than a button reading "Star".
+ */
+import Icon from './Icon.astro';
+import { repoLinks } from '~/config/project';
+---
+
+<a
+  href={repoLinks.repo}
+  target="_blank"
+  rel="noopener noreferrer"
+  data-stars={repoLinks.api}
+  class="group inline-flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container px-3.5 py-1.5 font-mono text-xs text-white shadow-sm transition-all duration-200 hover:border-primary/40 hover:bg-surface-container-high active:scale-95"
+>
+  <Icon
+    name="simple-icons:github"
+    size={16}
+    class="text-white/80 transition-all duration-200 group-hover:scale-110 group-hover:text-primary"
+  />
+  <span class="font-medium">Star</span>
+  <span
+    data-star-count
+    hidden
+    class="border-l border-outline-variant pl-2 font-normal text-on-surface-variant transition-colors group-hover:text-primary"
+  ></span>
+</a>
+
+<script>
+  const CACHE_KEY = 'kubetower:stars';
+  const TTL_MS = 60 * 60 * 1000;
+
+  /** 986 → "986", 12 400 → "12.4k", 1 200 000 → "1.2M". */
+  function format(count: number): string {
+    if (count < 1_000) return String(count);
+
+    // Compare on the rounded value, not the raw one: 999 999 rounds to 1000.0k,
+    // and "1000k" is a number nobody writes.
+    const thousands = count / 1_000;
+    if (thousands < 999.95) return `${thousands.toFixed(1).replace(/\.0$/, '')}k`;
+
+    return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+
+  const link = document.querySelector<HTMLAnchorElement>('[data-stars]');
+  const output = link?.querySelector<HTMLElement>('[data-star-count]');
+
+  if (link && output) {
+    const endpoint = link.dataset.stars ?? '';
+
+    const show = (count: number) => {
+      output.textContent = format(count);
+      output.hidden = false;
+      link.title = `${count.toLocaleString('en')} stars on GitHub`;
+    };
+
+    /* One request per session rather than one per page: this is a multi-page
+       site, and the anonymous API allows 60 an hour per address. */
+    let cached: { count: number; at: number } | null = null;
+    try {
+      cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null');
+    } catch {
+      cached = null;
+    }
+
+    if (cached && typeof cached.count === 'number' && Date.now() - cached.at < TTL_MS) {
+      show(cached.count);
+    } else {
+      fetch(endpoint, { headers: { Accept: 'application/vnd.github+json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+        .then((data: { stargazers_count?: unknown }) => {
+          const count = data.stargazers_count;
+          if (typeof count !== 'number') return;
+
+          show(count);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ count, at: Date.now() }));
+          } catch {
+            /* Private browsing with storage disabled: the count still shows,
+               it is just fetched again on the next page. */
+          }
+        })
+        .catch(() => {
+          /* Private repository, rate limit, or no network. The button stays a
+             link to the repository, which is the part that matters. */
+        });
+    }
+  }
+</script>

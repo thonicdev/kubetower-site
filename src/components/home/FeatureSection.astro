@@ -1,0 +1,108 @@
+---
+/**
+ * A titled grid of four accent cards.
+ *
+ * Two sections on the landing page have this exact shape — what the console is,
+ * and what it does with a model attached — so it is one component taking its
+ * copy as a prop rather than two that drift apart on the first styling change.
+ */
+import Icon from '../Icon.astro';
+import SpotlightCard from '../ui/SpotlightCard.astro';
+import type { Highlight, Tone } from '~/config/landing';
+
+interface Props {
+  id: string;
+  title: string;
+  lede: string;
+  items: Highlight[];
+  /** Draws the hairline that separates this section from the one above. */
+  divider?: boolean;
+}
+
+const { id, title, lede, items, divider = false } = Astro.props;
+
+const tones: Record<Tone, { border: string; icon: string; title: string; dot: string; foot: string }> = {
+  primary: {
+    border: 'hover:border-primary/50 hover:shadow-primary/5',
+    icon: 'text-primary group-hover:bg-primary/10',
+    title: 'group-hover:text-primary',
+    dot: 'bg-primary',
+    foot: 'text-primary',
+  },
+  secondary: {
+    border: 'hover:border-secondary/50 hover:shadow-secondary/5',
+    icon: 'text-secondary group-hover:bg-secondary/10',
+    title: 'group-hover:text-secondary',
+    dot: 'bg-secondary',
+    foot: 'text-secondary',
+  },
+  tertiary: {
+    border: 'hover:border-tertiary/50 hover:shadow-tertiary/5',
+    icon: 'text-tertiary group-hover:bg-tertiary/10',
+    title: 'group-hover:text-tertiary',
+    dot: 'bg-tertiary',
+    foot: 'text-tertiary',
+  },
+  error: {
+    border: 'hover:border-error/50 hover:shadow-error/5',
+    icon: 'text-error group-hover:bg-error/10',
+    title: 'group-hover:text-error',
+    dot: 'bg-error',
+    foot: 'text-error',
+  },
+};
+---
+
+<section
+  id={id}
+  class:list={['mx-auto max-w-6xl scroll-mt-24 px-6 py-16', divider && 'border-t border-outline-variant/50']}
+>
+  <div class="mx-auto mb-12 max-w-2xl text-center">
+    <h2 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h2>
+    <p class="mt-3 text-sm leading-relaxed text-on-surface-variant sm:text-base">{lede}</p>
+  </div>
+
+  <ul class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+    {
+      items.map((item) => {
+        const tone = tones[item.tone];
+        const foot = tones[item.footTone ?? item.tone];
+        return (
+          <SpotlightCard
+            as="li"
+            tone={item.tone}
+            class:list={[
+              'group flex flex-col justify-between rounded-xl border border-outline-variant/80 bg-surface-container-low p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
+              tone.border,
+            ]}
+          >
+            <div>
+              <div
+                class:list={[
+                  'mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container transition-all duration-300 group-hover:scale-110',
+                  tone.icon,
+                ]}
+              >
+                <Icon name={item.icon} size={22} />
+              </div>
+              <h3 class:list={['mb-2 text-base font-semibold text-white transition-colors', tone.title]}>
+                {item.title}
+              </h3>
+              <p class="text-xs leading-relaxed text-on-surface-variant">{item.body}</p>
+            </div>
+
+            <p
+              class:list={[
+                'mt-4 flex items-center gap-1.5 border-t border-outline-variant/40 pt-3 text-[11px]',
+                foot.foot,
+              ]}
+            >
+              <span class:list={['h-1.5 w-1.5 rounded-full', foot.dot]} />
+              {item.footnote}
+            </p>
+          </SpotlightCard>
+        );
+      })
+    }
+  </ul>
+</section>

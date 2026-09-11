@@ -1,0 +1,264 @@
+---
+/**
+ * The platform selector, following the download mockup.
+ *
+ * The cards are a tablist over tabpanels rather than clickable divs, so the
+ * page works from the keyboard and announces what it is. Every panel is
+ * rendered and one shown, so with JavaScript off the first platform is still
+ * complete rather than the page being four dead cards.
+ */
+import Icon from '../Icon.astro';
+import {
+  assetHref,
+  checksumsHref,
+  commandLine,
+  downloadPlatforms,
+  type Artifact,
+  type CommandSegment,
+  type DownloadPlatform,
+} from '~/config/downloads';
+import { withBase } from '~/lib/paths';
+
+const columns: Record<number, string> = {
+  2: 'md:grid-cols-2 gap-5',
+  3: 'md:grid-cols-3 gap-4',
+};
+
+const segmentTone: Record<NonNullable<CommandSegment['tone']>, string> = {
+  primary: 'text-primary',
+  warning: 'text-warning',
+  tertiary: 'text-tertiary',
+};
+
+const artifactButton = (artifact: Artifact) =>
+  artifact.variant === 'primary'
+    ? 'bg-primary text-on-primary hover:bg-primary-fixed shadow-[0_0_15px_rgba(76,215,246,0.25)]'
+    : 'border border-outline-variant bg-surface-container text-on-surface hover:bg-surface-container-high';
+
+const panelId = (platform: DownloadPlatform) => `panel-${platform.id}`;
+const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
+---
+
+<div data-platforms>
+  <!-- Subheader -->
+  <div class="mb-5">
+    <span class="font-mono text-xs font-semibold tracking-wider text-on-surface-variant uppercase">
+      Supported platforms
+    </span>
+    <h2 class="mt-1 text-xl font-bold text-white">Select your operating system</h2>
+  </div>
+
+  <!-- 4 platform cards -->
+  <div role="tablist" aria-label="Platforms" class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      downloadPlatforms.map((platform, index) => (
+        <button
+          type="button"
+          role="tab"
+          id={tabId(platform)}
+          data-platform-tab={platform.id}
+          aria-controls={panelId(platform)}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          tabindex={index === 0 ? 0 : -1}
+          class:list={[
+            'group flex cursor-pointer flex-col justify-between rounded-xl border bg-surface-container-low p-5 text-left transition-all duration-200',
+            index === 0
+              ? 'border-primary shadow-[0_0_0_1px_var(--color-primary),0_10px_25px_-5px_rgba(76,215,246,0.12)]'
+              : 'border-outline-variant hover:border-outline',
+          ]}
+        >
+          <span>
+            <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container text-on-surface-variant transition-colors group-hover:border-primary/30 group-hover:text-primary">
+              <Icon name={platform.icon} size={20} />
+            </span>
+            <span class="mb-1.5 block text-lg font-bold text-white">{platform.name}</span>
+            <span class="block min-h-[36px] text-xs leading-relaxed text-on-surface-variant">{platform.blurb}</span>
+          </span>
+
+          <span
+            class="mt-6 flex w-full items-center justify-center gap-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-xs font-medium text-on-surface-variant transition-colors"
+          >
+            <Icon name={platform.actionIcon} size={14} />
+            {platform.action}
+          </span>
+        </button>
+      ))
+    }
+  </div>
+
+  <!-- Panels -->
+  {
+    downloadPlatforms.map((platform, index) => (
+      <section
+        role="tabpanel"
+        id={panelId(platform)}
+        data-platform-panel={platform.id}
+        aria-labelledby={tabId(platform)}
+        hidden={index !== 0}
+        class="rounded-2xl border border-outline-variant bg-surface-container-low/90 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
+      >
+        <!-- Panel header -->
+        <div class="flex items-center gap-3 border-b border-outline-variant/60 pb-6">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+            <Icon name={platform.icon} size={20} />
+          </span>
+          <div>
+            <h3 class="text-lg font-bold tracking-tight text-white">{platform.panelTitle}</h3>
+            <p class="text-xs text-on-surface-variant">{platform.panelLede}</p>
+          </div>
+        </div>
+
+        {platform.artifacts && (
+          <div class:list={['mt-6 grid grid-cols-1', columns[platform.columns ?? 2]]}>
+            {platform.artifacts.map((artifact) => (
+              <div class="flex flex-col justify-between rounded-xl border border-outline-variant/70 bg-surface-container-lowest/70 p-5">
+                <div>
+                  <div class="mb-2 flex items-center gap-2">
+                    {artifact.tag ? (
+                      <>
+                        <span
+                          class:list={[
+                            'flex h-6 w-6 items-center justify-center rounded border border-outline-variant bg-surface-container text-[10px] font-bold',
+                            artifact.variant === 'primary' ? 'text-primary' : 'text-on-surface',
+                          ]}
+                        >
+                          {artifact.tag}
+                        </span>
+                        <h4 class="text-base font-bold text-white">{artifact.title}</h4>
+                      </>
+                    ) : (
+                      <h4 class="text-sm font-bold text-white">{artifact.title}</h4>
+                    )}
+                  </div>
+                  <p
+                    class:list={[
+                      'text-xs leading-relaxed text-on-surface-variant',
+                      artifact.tag ? 'mb-6' : 'mb-4',
+                    ]}
+                  >
+                    {artifact.description}
+                  </p>
+                </div>
+
+                <div>
+                  <a
+                    href={assetHref(artifact.asset)}
+                    download
+                    class:list={[
+                      'flex w-full items-center justify-center gap-2 rounded-lg text-xs transition-all active:scale-[0.98]',
+                      artifact.tag ? 'px-4 py-2.5 font-semibold' : 'px-3 py-2 font-medium',
+                      artifactButton(artifact),
+                    ]}
+                  >
+                    {artifact.icon && <Icon name="lucide:download" size={16} class="shrink-0" />}
+                    <span class="truncate">{artifact.label}</span>
+                  </a>
+
+                  <div class="mt-3 flex items-center justify-between gap-2 text-[11px] text-on-surface-variant">
+                    <a href={checksumsHref} class="flex items-center gap-1 transition-colors hover:text-primary">
+                      <span aria-hidden="true">→</span>
+                      SHA256 Checksum
+                    </a>
+                    <span>File size: {artifact.size}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {platform.command && (
+          <div class="mt-6">
+            <div class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-inner">
+              <!-- Terminal header bar -->
+              <div class="flex items-center justify-between border-b border-outline-variant/60 bg-surface-container-high px-4 py-2.5">
+                <span class="flex items-center gap-2" aria-hidden="true">
+                  <span class="h-2.5 w-2.5 rounded-full bg-[#ef4444]/80" />
+                  <span class="h-2.5 w-2.5 rounded-full bg-[#eab308]/80" />
+                  <span class="h-2.5 w-2.5 rounded-full bg-[#22c55e]/80" />
+                </span>
+                <button
+                  type="button"
+                  data-copy={commandLine(platform)}
+                  class="flex cursor-pointer items-center gap-1.5 text-xs text-on-surface-variant transition-colors hover:text-primary"
+                >
+                  <Icon name="lucide:copy" size={14} data-copy-icon />
+                  <Icon name="lucide:check" size={14} class="hidden text-tertiary" data-copy-done />
+                  <span data-copy-label>Copy</span>
+                </button>
+              </div>
+
+              <!-- Code content -->
+              <pre class="overflow-x-auto p-5 font-mono text-xs leading-relaxed text-on-surface select-all sm:text-sm"><code><span class="text-on-surface-variant select-none">$ </span>{platform.command.map((line, lineIndex) => [
+                ...line.map((segment) => (
+                  <span class={segment.tone ? segmentTone[segment.tone] : undefined}>{segment.text}</span>
+                )),
+                lineIndex < platform.command!.length - 1 ? '\n' : '',
+              ])}</code></pre>
+            </div>
+          </div>
+        )}
+
+        <!-- Panel footer -->
+        <div class="mt-6 flex flex-col items-center justify-between gap-3 border-t border-outline-variant/60 pt-5 text-xs text-on-surface-variant sm:flex-row">
+          <div class="flex items-center gap-2">
+            <span class="h-1.5 w-1.5 rounded-full bg-primary" />
+            <span>{platform.requirement}</span>
+          </div>
+          <a
+            href={platform.footerLink.external ? platform.footerLink.href : withBase(platform.footerLink.href)}
+            target={platform.footerLink.external ? '_blank' : undefined}
+            rel={platform.footerLink.external ? 'noopener noreferrer' : undefined}
+            class="flex items-center gap-1 text-primary transition-colors hover:text-primary-fixed"
+          >
+            {platform.footerLink.label} <span class="text-sm" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+    ))
+  }
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-platforms]');
+
+  if (root) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-platform-tab]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-platform-panel]'));
+
+    const selected = [
+      'border-primary',
+      'shadow-[0_0_0_1px_var(--color-primary),0_10px_25px_-5px_rgba(76,215,246,0.12)]',
+    ];
+    const idle = ['border-outline-variant', 'hover:border-outline'];
+
+    const select = (id: string) => {
+      for (const tab of tabs) {
+        const chosen = tab.dataset.platformTab === id;
+
+        tab.setAttribute('aria-selected', String(chosen));
+        tab.tabIndex = chosen ? 0 : -1;
+        tab.classList.remove(...(chosen ? idle : selected));
+        tab.classList.add(...(chosen ? selected : idle));
+      }
+
+      for (const panel of panels) {
+        panel.hidden = panel.dataset.platformPanel !== id;
+      }
+    };
+
+    for (const [index, tab] of tabs.entries()) {
+      tab.addEventListener('click', () => select(tab.dataset.platformTab ?? ''));
+
+      tab.addEventListener('keydown', (event) => {
+        const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        const next = tabs[(index + step + tabs.length) % tabs.length];
+        if (!next) return;
+        select(next.dataset.platformTab ?? '');
+        next.focus();
+      });
+    }
+  }
+</script>

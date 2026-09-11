@@ -1,0 +1,97 @@
+---
+import GitHubStars from './GitHubStars.astro';
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { primaryNav } from '~/config/site';
+import { withBase, isWithin } from '~/lib/paths';
+
+const pathname = Astro.url.pathname;
+---
+
+<header
+  class="fixed inset-x-0 top-0 z-50 border-b border-outline-variant/60 bg-background/80 backdrop-blur-xl"
+>
+  <!-- Three columns rather than justify-between: the two outer cells share
+       the leftover space equally, so the navigation sits on the page's centre
+       line whatever the brand and the actions happen to measure. -->
+  <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
+    <a href={withBase('/')} class="group flex items-center gap-3 justify-self-start">
+      <Logo size={32} class="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
+      <span class="text-base font-bold tracking-tight text-white transition-colors group-hover:text-primary">
+        kubetower
+      </span>
+    </a>
+
+    <nav class="hidden items-center gap-6 text-sm text-on-surface-variant md:flex" aria-label="Primary">
+      {
+        primaryNav.map((link) => {
+          const active = !link.href.includes('#') && isWithin(pathname, link.href);
+          return (
+            <a
+              href={withBase(link.href)}
+              aria-current={active ? 'page' : undefined}
+              class:list={[
+                'relative py-1 transition-colors after:absolute after:bottom-0 after:left-0 after:h-[2px] after:bg-primary after:transition-all hover:text-white hover:after:w-full',
+                active ? 'text-white after:w-full' : 'after:w-0',
+              ]}
+            >
+              {link.label}
+            </a>
+          );
+        })
+      }
+    </nav>
+
+    <div class="flex items-center gap-2 justify-self-end">
+      <GitHubStars />
+
+      <button
+        type="button"
+        id="nav-toggle"
+        aria-expanded="false"
+        aria-controls="nav-mobile"
+        aria-label="Open menu"
+        class="inline-flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container p-2 text-on-surface-variant transition-colors hover:text-white md:hidden"
+      >
+        <Icon name="lucide:menu" size={18} data-nav-open />
+        <Icon name="lucide:x" size={18} class="hidden" data-nav-close />
+      </button>
+    </div>
+  </div>
+
+  <nav
+    id="nav-mobile"
+    hidden
+    aria-label="Primary, mobile"
+    class="border-t border-outline-variant/60 bg-surface-container-lowest px-6 py-3 md:hidden"
+  >
+    <ul class="flex flex-col gap-1 text-sm">
+      {
+        primaryNav.map((link) => (
+          <li>
+            <a
+              href={withBase(link.href)}
+              class="block rounded-lg px-2 py-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-white"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('nav-mobile');
+
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    toggle.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+    if (menu) menu.hidden = open;
+    toggle.querySelector('[data-nav-open]')?.classList.toggle('hidden', !open);
+    toggle.querySelector('[data-nav-close]')?.classList.toggle('hidden', open);
+  });
+</script>

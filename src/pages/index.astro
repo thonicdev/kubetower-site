@@ -1,0 +1,26 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import ScreenshotSlider from '~/components/home/ScreenshotSlider.astro';
+import FeatureSection from '~/components/home/FeatureSection.astro';
+import Profiles from '~/components/home/Profiles.astro';
+import { aiFeatures, aiIntro, highlights, highlightsIntro } from '~/config/landing';
+import { site } from '~/config/site';
+---
+
+<BaseLayout title={`${site.name} — ${site.tagline}`} bare>
+  <Hero />
+  <ScreenshotSlider />
+
+  <FeatureSection
+    id="highlights"
+    title={highlightsIntro.title}
+    lede={highlightsIntro.lede}
+    items={highlights}
+    divider
+  />
+
+  <Profiles />
+
+  <FeatureSection id="ai" title={aiIntro.title} lede={aiIntro.lede} items={aiFeatures} divider />
+</BaseLayout>
