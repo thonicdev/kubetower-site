@@ -1,0 +1,41 @@
+---
+/**
+ * A shell command on a dark strip, with its copy button.
+ *
+ * With `command` null it renders the placeholder instead — the same row, the
+ * same height, and no command that would fail if anyone ran it.
+ */
+import CopyButton from './CopyButton.astro';
+
+interface Props {
+  command: string | null;
+  /** Stands in for the command while there is nothing to run. */
+  placeholder?: string;
+  copyLabel?: string;
+  class?: string;
+}
+
+const { command, placeholder = 'Available at v0', copyLabel = 'Copy', class: className } = Astro.props;
+---
+
+<div
+  class:list={[
+    'flex items-center justify-between gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-3.5 font-mono text-xs shadow-inner',
+    className,
+  ]}
+>
+  {
+    command ? (
+      <code class="select-all truncate text-primary">
+        <span class="mr-2 select-none font-bold text-on-surface-variant">$</span>
+        {command}
+      </code>
+    ) : (
+      <span class="truncate text-on-surface-variant/70">
+        <span class="mr-2 select-none font-bold text-on-surface-variant/50">$</span>
+        {placeholder}
+      </span>
+    )
+  }
+  <CopyButton text={command} label={copyLabel} />
+</div>

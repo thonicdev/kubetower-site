@@ -1,0 +1,44 @@
+---
+title: What kubetower is
+description: An air-gapped, multi-cluster Kubernetes console — one Go binary that serves its own interface and is the only thing in the picture allowed to talk to a cluster.
+order: 1
+---
+
+kubetower is a Kubernetes console you run yourself. It reads the kubeconfig you
+already have, serves its own interface over loopback, and talks to your clusters
+from the machine it is running on. There is no account to create and no cloud
+component in the path.
+
+It is in development, and the pages here describe what the first release
+contains. Where something is not built yet, it says so rather than describing it
+in the present tense.
+
+## The short version
+
+- **One binary.** The backend and the interface ship together; the interface is
+  embedded in the executable rather than served from somewhere else.
+- **Your credentials stay where they are.** kubetower reads the kubeconfig and
+  the credential helpers already on your machine. It does not copy them, upload
+  them, or ask you to paste them into anything.
+- **Multi-cluster from the start.** Every context in your kubeconfig, reachable
+  in the same session, without a separate installation per cluster.
+- **Nothing in the browser touches an API server.** The interface speaks to a
+  JSON API on the same origin, and the Go backend is the only Kubernetes client
+  in the system.
+- **Writes go through one door.** Every mutation passes a single guarded path,
+  with a dry run before it and a log line after it.
+
+## What it is not
+
+It is not a hosted dashboard, and it is not an agent you install into a cluster
+so that somebody else's service can read it. Those are reasonable products; they
+are a different one, and they have a different threat model.
+
+It is also not a `kubectl` replacement. The shell is right there, the console
+does not try to hide it, and several things are simply faster typed.
+
+## Where to go next
+
+- [How it is put together](/docs/architecture) — the parts, and why the boundary
+  between them is where it is.
+- [Installing it](/docs/install) — the four ways the first release ships.

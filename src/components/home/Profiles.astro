@@ -1,0 +1,109 @@
+---
+/**
+ * Desktop against in-cluster, as two cards answering the same six questions.
+ *
+ * The rows come from src/config/profiles.ts in one list per profile, so the
+ * two columns cannot silently answer different questions — which is the way a
+ * comparison table stops being a comparison.
+ */
+import Icon from '../Icon.astro';
+import CopyButton from '../ui/CopyButton.astro';
+import { profiles, profilesIntro, type ValueTone } from '~/config/profiles';
+import { withBase } from '~/lib/paths';
+
+const values: Record<ValueTone | 'error', string> = {
+  primary: 'text-primary',
+  tertiary: 'text-tertiary',
+  plain: 'text-white',
+  muted: 'text-on-surface-variant/80',
+  error: 'text-error',
+};
+
+const heads = {
+  primary: { frame: 'border-2 border-primary/50', chip: 'bg-primary/15 text-primary', sub: 'text-primary' },
+  tertiary: {
+    frame: 'border border-outline-variant hover:border-tertiary/50',
+    chip: 'bg-tertiary/15 text-tertiary',
+    sub: 'text-tertiary',
+  },
+} as const;
+---
+
+<section id="profiles" class="mx-auto max-w-6xl scroll-mt-24 border-t border-outline-variant/50 px-6 py-16">
+  <div class="mx-auto mb-12 max-w-3xl text-center">
+    <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">{profilesIntro.title}</h2>
+    <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-on-surface-variant sm:text-base">
+      {profilesIntro.lede}
+    </p>
+  </div>
+
+  <div class="mx-auto grid max-w-5xl grid-cols-1 gap-8 lg:grid-cols-2">
+    {
+      profiles.map((profile) => {
+        const head = heads[profile.tone];
+        return (
+          <article
+            class:list={[
+              'flex flex-col justify-between rounded-2xl bg-surface-container-low p-6 shadow-xl transition-all sm:p-8',
+              head.frame,
+            ]}
+          >
+            <div>
+              <header class="mb-4 flex items-center gap-3">
+                <span class:list={['flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', head.chip]}>
+                  <Icon name={profile.icon} size={26} />
+                </span>
+                <div class="min-w-0">
+                  <h3 class="text-xl font-bold text-white">{profile.title}</h3>
+                  <p class:list={['font-mono text-xs font-medium', head.sub]}>{profile.subtitle}</p>
+                </div>
+              </header>
+
+              <p class="mb-6 font-mono text-xs text-on-surface-variant">{profile.audience}</p>
+
+              <dl class="space-y-2.5 font-mono text-xs">
+                {profile.rows.map((row) => (
+                  <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-outline-variant/60 bg-surface-container-lowest p-2.5">
+                    <dt class="text-on-surface-variant">{row.label}</dt>
+                    <dd
+                      class:list={[
+                        'ml-auto flex items-center gap-1.5 text-right',
+                        values[row.tone],
+                        row.tone !== 'muted' && 'font-semibold',
+                      ]}
+                    >
+                      <Icon
+                        name={row.icon}
+                        size={15}
+                        class:list={['shrink-0', row.iconTone && values[row.iconTone]]}
+                      />
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {
+              profile.cta.href ? (
+                <a
+                  href={withBase(profile.cta.href)}
+                  class="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-center font-mono text-xs font-bold text-on-primary shadow-md transition-all hover:bg-primary-fixed hover:shadow-[0_0_15px_rgba(76,215,246,0.35)] active:scale-95"
+                >
+                  <Icon name={profile.cta.icon} size={18} />
+                  {profile.cta.label}
+                </a>
+              ) : (
+                <CopyButton
+                  text={profile.cta.copy ?? null}
+                  label={profile.cta.label}
+                  class="mt-8 w-full justify-center py-3 font-medium hover:border-tertiary/50"
+                />
+              )
+            }
+          </article>
+        );
+      })
+    }
+  </div>
+</section>

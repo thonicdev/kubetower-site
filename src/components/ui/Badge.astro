@@ -1,0 +1,39 @@
+---
+type Tone = 'primary' | 'tertiary' | 'secondary' | 'error' | 'neutral';
+
+type Size = 'sm' | 'md' | 'lg';
+
+interface Props {
+  tone?: Tone;
+  /**
+   * Padding and type scale. A prop rather than a class the caller passes:
+   * Tailwind resolves conflicting utilities by their order in the stylesheet,
+   * not by the order they appear in the attribute, so a caller's `text-xs`
+   * silently loses to the base's `text-[10px]`.
+   */
+  size?: Size;
+  class?: string;
+}
+
+const { tone = 'neutral', size = 'sm', class: className } = Astro.props;
+
+const tones: Record<Tone, { text: string; ring: string }> = {
+  primary: { text: 'text-primary', ring: 'border-primary/20 bg-primary/10' },
+  tertiary: { text: 'text-tertiary', ring: 'border-tertiary/20 bg-tertiary/10' },
+  secondary: { text: 'text-secondary', ring: 'border-secondary/20 bg-secondary/10' },
+  error: { text: 'text-error', ring: 'border-error/20 bg-error/10' },
+  neutral: { text: 'text-on-surface', ring: 'border-outline-variant bg-surface-container' },
+};
+
+const sizes: Record<Size, string> = {
+  sm: 'px-2 py-0.5 text-[10px]',
+  md: 'px-3.5 py-1 text-xs',
+  lg: 'px-4 py-1.5 text-sm',
+};
+
+const { text, ring } = tones[tone];
+---
+
+<span class:list={['inline-flex items-center rounded-full border', sizes[size], ring, text, className]}>
+  <slot />
+</span>

@@ -1,0 +1,39 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PlatformSelector from '~/components/download/PlatformSelector.astro';
+import { downloadIntro } from '~/config/downloads';
+import { release } from '~/config/release';
+---
+
+<BaseLayout
+  title="Get kubetower"
+  description="Download kubetower for macOS, Windows, Linux, or deploy it to a Kubernetes cluster with Helm."
+>
+  <!-- Hero -->
+  <section class="px-4 pt-16 pb-12 text-center">
+    <div class="mx-auto max-w-3xl">
+      <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+        {downloadIntro.titleLead}{' '}
+        <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          {downloadIntro.titleAccent}
+        </span>.
+      </h1>
+      <p class="mx-auto mt-4 max-w-2xl leading-relaxed text-on-surface-variant sm:text-lg">{downloadIntro.lede}</p>
+
+      <!-- Release status pill -->
+      <div
+        class="mt-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-surface-container px-3.5 py-1.5 text-xs text-on-surface shadow-sm"
+      >
+        <span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>
+        <span class="font-medium text-primary">Latest release: v{release.version}</span>
+        <span class="text-outline">•</span>
+        <span class="text-on-surface-variant">Released {release.date}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platform selector -->
+  <div class="mx-auto w-full max-w-5xl px-4 pb-24 sm:px-6">
+    <PlatformSelector />
+  </div>
+</BaseLayout>

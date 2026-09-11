@@ -1,0 +1,65 @@
+---
+import Icon from '../Icon.astro';
+import Badge from '../ui/Badge.astro';
+import SpecStrip from './SpecStrip.astro';
+import { hero } from '~/config/landing';
+import { repoLinks } from '~/config/project';
+import { withBase } from '~/lib/paths';
+---
+
+<section class="relative mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-24">
+  <!-- Ambient mesh. Purely decorative, so it is hidden from assistive tech and
+       stops animating when the visitor asks for less motion (global.css). -->
+  <div aria-hidden="true">
+    <div
+      class="pointer-events-none absolute -top-16 left-1/2 h-[360px] w-[760px] -translate-x-1/2 animate-glow-mesh rounded-full bg-primary/15 blur-[140px]"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute top-48 right-10 h-72 w-72 animate-float-slow rounded-full bg-secondary/15 blur-[120px]"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute top-36 left-4 h-60 w-60 animate-float-slow rounded-full bg-tertiary/10 blur-[110px]"
+      style="animation-delay: -3s;"
+    >
+    </div>
+  </div>
+
+  <div class="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+    <Badge tone="primary" size="lg">{hero.badge}</Badge>
+
+    <h1 class="text-4xl leading-[1.1] font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+      {hero.titleLead}
+      <br />
+      <span class="bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">
+        {hero.titleAccent}
+      </span>
+    </h1>
+
+    <p class="max-w-2xl leading-relaxed text-on-surface-variant sm:text-lg">{hero.lede}</p>
+
+    <div class="mt-10 flex flex-wrap items-center justify-center gap-3.5">
+      <a
+        href={withBase('/download')}
+        class="flex items-center gap-2.5 rounded-xl bg-primary px-7 py-3.5 text-base font-semibold text-on-primary shadow-sm transition-all hover:bg-primary-fixed hover:shadow-[0_0_20px_rgba(76,215,246,0.35)] active:scale-95"
+      >
+        <Icon name="lucide:download" size={20} />
+        Get kubetower
+      </a>
+      <a
+        href={repoLinks.repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center gap-2.5 rounded-xl border border-outline-variant bg-surface-container px-7 py-3.5 text-base font-medium text-white transition-colors hover:border-primary/40 hover:bg-surface-container-high active:scale-95"
+      >
+        <Icon name="simple-icons:github" size={19} />
+        View on GitHub
+      </a>
+    </div>
+  </div>
+
+  <div class="relative z-10 mx-auto mt-24 max-w-5xl">
+    <SpecStrip />
+  </div>
+</section>
