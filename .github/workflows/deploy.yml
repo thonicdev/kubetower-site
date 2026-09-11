@@ -1,0 +1,52 @@
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Needs Settings -> Pages -> Source: GitHub Actions. Without it the deploy step
+# fails with "Not Found" rather than doing nothing, which is the failure we
+# want: a silent no-op would look like a site that deployed.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never two deploys at once; the later push wins.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+      # Repository variables, so a deployment can move without a code change.
+      # The defaults serve the site from the root of the custom domain. To
+      # publish at the GitHub Pages project URL instead, set both:
+      #   SITE_URL=https://thonicdev.github.io   BASE_PATH=/kubetower-site
+      SITE_URL: ${{ vars.SITE_URL || 'https://kubetower.dev' }}
+      BASE_PATH: ${{ vars.BASE_PATH || '/' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

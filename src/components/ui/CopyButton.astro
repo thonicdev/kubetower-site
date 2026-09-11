@@ -1,0 +1,38 @@
+---
+/**
+ * Copy-to-clipboard, with the confirmation shown on the button itself.
+ *
+ * `disabled` is a real state rather than a styling trick: while a command is
+ * only planned there is nothing to put on the clipboard, and a button that
+ * copies an empty string is worse than one that says it cannot.
+ */
+import Icon from '../Icon.astro';
+
+interface Props {
+  text: string | null;
+  /** Shown next to the icon. Omit for an icon-only button. */
+  label?: string;
+  class?: string;
+}
+
+const { text, label, class: className } = Astro.props;
+const disabled = !text;
+---
+
+<button
+  type="button"
+  data-copy={text ?? undefined}
+  disabled={disabled}
+  aria-label={label ? undefined : 'Copy to clipboard'}
+  class:list={[
+    'group/copy inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 font-mono text-xs transition-all active:scale-95',
+    disabled
+      ? 'cursor-not-allowed border-outline-variant/60 text-on-surface-variant/50'
+      : 'border-outline-variant bg-surface-container text-white hover:bg-surface-container-high hover:border-primary/40',
+    className,
+  ]}
+>
+  <Icon name="lucide:copy" size={14} class="text-primary group-disabled/copy:text-on-surface-variant/50" data-copy-icon />
+  <Icon name="lucide:check" size={14} class="hidden text-tertiary" data-copy-done />
+  {label && <span data-copy-label>{label}</span>}
+</button>

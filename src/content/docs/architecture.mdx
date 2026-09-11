@@ -1,0 +1,64 @@
+---
+title: How it is put together
+description: One process, three runtime profiles, and a single guarded path for every write.
+order: 2
+---
+
+Most of what is interesting about a console is where its boundaries are. This
+page draws them.
+
+## One process serves everything
+
+A single Go binary serves both the JSON API and the interface. They share an
+origin, which removes a whole category of problem: no CORS configuration, no
+second container to deploy, no separate front-end host that can drift out of
+step with the API it is calling.
+
+The interface is a compiled bundle embedded in the binary. There is exactly one
+artefact to ship and one version number to reason about.
+
+## The backend is the only Kubernetes client
+
+This is the constraint the rest of the design follows from.
+
+The browser never holds a cluster credential and never opens a connection to an
+API server. It calls the local API; the backend calls Kubernetes. That means:
+
+- a cross-site scripting bug in the interface cannot exfiltrate a cluster
+  credential, because there is none in the page to take;
+- every call to a cluster passes through code you can read in one place;
+- the audit record of what the console did is written by the thing that did it.
+
+## Three runtime profiles
+
+The same binary runs in three shapes, chosen at runtime rather than compiled
+separately — a build variant is a configuration no test exercises.
+
+| | Desktop | Local container | Shared, in-cluster |
+| --- | --- | --- | --- |
+| Listens on | loopback | loopback, published | behind your ingress |
+| Signs you in with | a local password | a local password | your identity provider |
+| Cluster credentials | your kubeconfig | a mounted kubeconfig | a service account, with every action checked against *your* permissions |
+| Local shell | yes | yes | disabled |
+
+The last row is the important one. In the shared profile a local shell would run
+with the pod's own credentials rather than yours, so it is not available there —
+and the condition that switches it off exists before the profile does, not after.
+
+## One guarded door for every write
+
+Nothing reaches a cluster as a write except through a single path, which:
+
+1. refuses outright if the session is read-only;
+2. carries a `resourceVersion` precondition, so a change computed against a
+   stale copy is rejected rather than applied on top of somebody else's;
+3. runs a server-side dry run first, and shows you what came back;
+4. writes a log line naming who, what, where and what the answer was.
+
+The guard is structural rather than a list of resource kinds that are allowed
+through. A list is a thing to forget to update; a choke point is not.
+
+In the shared in-cluster profile the same door also asks the API server whether
+*you* are permitted the action, using ordinary Kubernetes roles and bindings.
+Your permissions are the ones that apply — the console does not have a
+permissions model of its own for you to keep in step with theirs.

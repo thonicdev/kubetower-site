@@ -1,0 +1,46 @@
+---
+title: Installing it
+description: The four ways the first release ships, and what each one is for.
+order: 3
+---
+
+import CommandRow from '~/components/ui/CommandRow.astro';
+
+Nothing is published for download yet. This page describes what the first
+release contains; the commands appear here when there is something for them to
+install.
+
+<CommandRow command={null} placeholder="Available at v0" />
+
+## A shell installer
+
+For macOS and Linux, the ordinary case: fetch one binary, put it on your PATH,
+run it. Suitable for a laptop you control and for a jump host you do not want to
+install a package manager on.
+
+## Homebrew
+
+A tap, for people who would rather have the console upgrade alongside everything
+else they have installed. Same binary, with `brew upgrade` behind it.
+
+## A container image
+
+The same binary in an image, with your kubeconfig mounted read-only and the port
+bound to loopback. Worth preferring when you would rather not install anything
+on the host at all — the console's view of your filesystem is then exactly the
+mount you gave it.
+
+## A Helm chart
+
+For the shared in-cluster profile: one console in a cluster, reached through
+your ingress, signed into with your identity provider, and authorising every
+action against the permissions the person already has. See
+[how it is put together](/docs/architecture) for what changes in that profile
+and why.
+
+## Verifying what you downloaded
+
+A console holds the credentials to every cluster you can reach, which makes it
+worth thirty seconds of checking before you run it. Checksums will be published
+with each release, and the steps to check them will be written here rather than
+left as an exercise.

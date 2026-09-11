@@ -1,0 +1,31 @@
+---
+/**
+ * Every link written in MDX prose.
+ *
+ * Markdown cannot call `withBase()`, and a root-relative `[install](/docs/…)`
+ * resolves to the host root — which 404s the moment the site is served from a
+ * sub-path, the way GitHub Pages serves it without a custom domain. Mapping
+ * `a` to this component puts prose links through the same helper as markup.
+ *
+ * External links also get their target and rel here, so no MDX author has to
+ * remember them.
+ */
+import { withBase } from '~/lib/paths';
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'a'> {
+  href?: string;
+}
+
+const { href = '', ...rest } = Astro.props;
+const external = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
+---
+
+<a
+  href={external ? href : withBase(href)}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+  {...rest}
+>
+  <slot />
+</a>

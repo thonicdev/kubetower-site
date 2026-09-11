@@ -1,0 +1,33 @@
+---
+/**
+ * The kubetower mark: three stacked isometric decks, lightest at the top.
+ *
+ * Drawn inline rather than loaded as a file so it inherits nothing, costs no
+ * request, and can be sized anywhere. No background: the plate belongs to the
+ * maskable app icon (public/icon-maskable.svg), which platforms crop to their
+ * own shape, and would be a square of the wrong colour anywhere else.
+ *
+ * The viewBox is the artwork's own bounds rather than the icon's 512 canvas,
+ * so the mark fills the box it is given instead of floating in padding.
+ */
+interface Props {
+  class?: string;
+  size?: number;
+}
+
+const { class: className, size = 32 } = Astro.props;
+---
+
+<svg
+  viewBox="0 0 300 300"
+  width={size}
+  height={size}
+  class={className}
+  role="img"
+  aria-label="kubetower"
+  fill="none"
+>
+  <path d="M150 143 L300 218 L150 293 L0 218 Z" fill="#1d47a6"></path>
+  <path d="M150 75 L300 150 L150 225 L0 150 Z" fill="#3b7ae8"></path>
+  <path d="M150 7 L300 82 L150 157 L0 82 Z" fill="#6ea0ff"></path>
+</svg>

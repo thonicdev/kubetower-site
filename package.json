@@ -1,0 +1,40 @@
+{
+  "name": "kubetower-site",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The kubetower website, a static Astro site published to GitHub Pages.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "sync": "astro sync",
+    "lint:commits": "commitlint --from origin/main --to HEAD --verbose"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^8.0.1",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@iconify-json/lucide": "^1.2.131",
+    "@iconify-json/simple-icons": "^1.2.95",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.2",
+    "sharp": "^0.35.4",
+    "swiper": "^14.2.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
+}

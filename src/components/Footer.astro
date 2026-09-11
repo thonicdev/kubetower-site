@@ -1,0 +1,46 @@
+---
+import Logo from './Logo.astro';
+import { footerNav } from '~/config/site';
+import { project, repoLinks } from '~/config/project';
+import { withBase } from '~/lib/paths';
+
+// Links into the console repository are rendered only once it is public. A
+// footer full of 404s is worse than a short footer.
+const links = [
+  ...footerNav.map((link) => ({ ...link, external: false })),
+  ...(project.repoPublic
+    ? [
+        { label: 'Repository', href: repoLinks.repo, external: true },
+        { label: 'Issues', href: repoLinks.issues, external: true },
+        { label: 'Releases', href: repoLinks.releases, external: true },
+      ]
+    : []),
+  { label: 'Site source', href: project.siteRepoUrl, external: true },
+];
+---
+
+<footer class="w-full border-t border-outline-variant/60 bg-surface-container-lowest py-8">
+  <div
+    class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-on-surface-variant sm:flex-row"
+  >
+    <div class="flex items-center gap-3">
+      <Logo size={20} />
+      <span>Free and open source software ({project.license})</span>
+    </div>
+
+    <nav class="flex flex-wrap items-center justify-center gap-5" aria-label="Footer">
+      {
+        links.map((link) => (
+          <a
+            href={link.external ? link.href : withBase(link.href)}
+            target={link.external ? '_blank' : undefined}
+            rel={link.external ? 'noopener noreferrer' : undefined}
+            class="transition-colors hover:text-white"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</footer>

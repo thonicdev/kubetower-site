@@ -1,0 +1,135 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Icon from '~/components/Icon.astro';
+import { docHref, getOrderedDocs, type DocEntry } from '~/lib/docs';
+import { withBase, isCurrent } from '~/lib/paths';
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  entry: DocEntry;
+  headings: MarkdownHeading[];
+}
+
+const { entry, headings } = Astro.props;
+
+const docs = await getOrderedDocs();
+const index = docs.findIndex((doc) => doc.id === entry.id);
+const previous = index > 0 ? docs[index - 1] : undefined;
+const next = index >= 0 && index < docs.length - 1 ? docs[index + 1] : undefined;
+
+// Only h2s: an "on this page" list that includes every h3 is a second copy of
+// the page rather than a way around it.
+const onThisPage = headings.filter((heading) => heading.depth === 2);
+const pathname = Astro.url.pathname;
+---
+
+<BaseLayout title={entry.data.title} description={entry.data.description}>
+  <div class="mx-auto max-w-6xl px-6 py-12">
+    <div class="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)_12rem] lg:gap-10">
+      <!-- Sidebar -->
+      <nav aria-label="Documentation" class="mb-10 lg:mb-0">
+        <p class="mb-3 font-mono text-[11px] tracking-wider text-on-surface-variant uppercase">Documentation</p>
+        <ul class="space-y-0.5 border-l border-outline-variant">
+          {
+            docs.map((doc) => {
+              const href = docHref(doc);
+              const current = isCurrent(pathname, href);
+              return (
+                <li>
+                  <a
+                    href={withBase(href)}
+                    aria-current={current ? 'page' : undefined}
+                    class:list={[
+                      '-ml-px block border-l py-1.5 pl-4 text-sm transition-colors',
+                      current
+                        ? 'border-primary font-medium text-primary'
+                        : 'border-transparent text-on-surface-variant hover:border-outline hover:text-white',
+                    ]}
+                  >
+                    {doc.data.title}
+                  </a>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </nav>
+
+      <!-- Article -->
+      <article class="min-w-0">
+        <header class="mb-8 border-b border-outline-variant/60 pb-6">
+          <h1 class="text-3xl font-bold tracking-tight text-white">{entry.data.title}</h1>
+          <p class="mt-3 leading-relaxed text-on-surface-variant">{entry.data.description}</p>
+        </header>
+
+        <div class="prose">
+          <slot />
+        </div>
+
+        {
+          (previous || next) && (
+            <nav
+              aria-label="Documentation pages"
+              class="mt-14 grid gap-3 border-t border-outline-variant/60 pt-6 sm:grid-cols-2"
+            >
+              {previous ? (
+                <a
+                  href={withBase(docHref(previous))}
+                  class="group flex flex-col gap-1 rounded-xl border border-outline-variant/80 bg-surface-container-low p-4 transition-colors hover:border-primary/40"
+                >
+                  <span class="flex items-center gap-1.5 font-mono text-[11px] text-on-surface-variant">
+                    <Icon name="lucide:chevron-left" size={13} />
+                    Previous
+                  </span>
+                  <span class="text-sm font-medium text-white transition-colors group-hover:text-primary">
+                    {previous.data.title}
+                  </span>
+                </a>
+              ) : (
+                <span />
+              )}
+
+              {next && (
+                <a
+                  href={withBase(docHref(next))}
+                  class="group flex flex-col gap-1 rounded-xl border border-outline-variant/80 bg-surface-container-low p-4 text-right transition-colors hover:border-primary/40 sm:col-start-2"
+                >
+                  <span class="flex items-center justify-end gap-1.5 font-mono text-[11px] text-on-surface-variant">
+                    Next
+                    <Icon name="lucide:chevron-right" size={13} />
+                  </span>
+                  <span class="text-sm font-medium text-white transition-colors group-hover:text-primary">
+                    {next.data.title}
+                  </span>
+                </a>
+              )}
+            </nav>
+          )
+        }
+      </article>
+
+      <!-- On this page -->
+      {
+        onThisPage.length > 1 && (
+          <nav aria-label="On this page" class="mt-12 hidden lg:mt-0 lg:block">
+            <div class="sticky top-24">
+              <p class="mb-3 font-mono text-[11px] tracking-wider text-on-surface-variant uppercase">On this page</p>
+              <ul class="space-y-1.5 text-xs">
+                {onThisPage.map((heading) => (
+                  <li>
+                    <a
+                      href={`#${heading.slug}`}
+                      class="block text-on-surface-variant transition-colors hover:text-primary"
+                    >
+                      {heading.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>
