@@ -1,44 +1,78 @@
 ---
-title: What kubetower is
-description: An air-gapped, multi-cluster Kubernetes console — one Go binary that serves its own interface and is the only thing in the picture allowed to talk to a cluster.
+title: Getting started
+description: The shortest path from nothing to a console open on your clusters.
 order: 1
 ---
 
-kubetower is a Kubernetes console you run yourself. It reads the kubeconfig you
-already have, serves its own interface over loopback, and talks to your clusters
-from the machine it is running on. There is no account to create and no cloud
-component in the path.
+import CommandRow from '~/components/ui/CommandRow.astro';
 
-It is in development, and the pages here describe what the first release
-contains. Where something is not built yet, it says so rather than describing it
-in the present tense.
+kubetower is one Go binary that serves its own interface. You run it, you open a
+browser, it talks to the clusters already in your kubeconfig.
 
-## The short version
+## What you need
 
-- **One binary.** The backend and the interface ship together; the interface is
-  embedded in the executable rather than served from somewhere else.
-- **Your credentials stay where they are.** kubetower reads the kubeconfig and
-  the credential helpers already on your machine. It does not copy them, upload
-  them, or ask you to paste them into anything.
-- **Multi-cluster from the start.** Every context in your kubeconfig, reachable
-  in the same session, without a separate installation per cluster.
-- **Nothing in the browser touches an API server.** The interface speaks to a
-  JSON API on the same origin, and the Go backend is the only Kubernetes client
-  in the system.
-- **Writes go through one door.** Every mutation passes a single guarded path,
-  with a dry run before it and a log line after it.
+- **A kubeconfig** — the same file `kubectl` reads. `KUBECONFIG` is treated as a
+  list and merged the way `kubectl` merges it.
+- **A browser.**
 
-## What it is not
+Nothing else. No runtime to install on the host, no database, no agent in the
+cluster, no account.
 
-It is not a hosted dashboard, and it is not an agent you install into a cluster
-so that somebody else's service can read it. Those are reasonable products; they
-are a different one, and they have a different threat model.
+## Pick where it runs
 
-It is also not a `kubectl` replacement. The shell is right there, the console
-does not try to hide it, and several things are simply faster typed.
+| | Where | Good for | Page |
+| --- | --- | --- | --- |
+| **On your machine** | a binary on your laptop, listening on loopback | one operator, several clusters, air-gapped workstations | [Install](/docs/install) |
+| **In a container** | the same binary in an image, kubeconfig mounted | not installing anything on the host | [Run in a container](/docs/container) |
+| **In a cluster** | one console a team shares, behind your ingress | central access, single sign-on | [Deploy with Helm](/docs/helm) |
 
-## Where to go next
+## There is no release yet
 
-- [How it is put together](/docs/architecture) — the parts, and why the boundary
-  between them is where it is.
-- [Installing it](/docs/install) — the four ways the first release ships.
+Measured on this repository: `git tag` and `gh release list -R thonicdev/kubetower`
+both return nothing. Until the first tag, the way in is to build it.
+
+<CommandRow command={null} placeholder="Binaries: available at v0" />
+
+```bash
+git clone https://github.com/thonicdev/kubetower
+cd kubetower
+
+# The interface, compiled into the binary.
+cd web && pnpm install --frozen-lockfile && pnpm run build && cd ..
+
+# The binary.
+go build -trimpath -o kubetower ./cmd/kubetower
+```
+
+Go at the version [`go.mod`](https://github.com/thonicdev/kubetower/blob/main/go.mod)
+pins, and Node 22 with pnpm for the interface. If you only touch the backend you
+can skip the first command — the binary then serves a page telling you the
+interface is not built rather than failing to compile.
+
+## The first run
+
+```bash
+./kubetower
+```
+
+There is **no way to start it without a password**, and that is not a setting: the
+process holds administrator credentials for production clusters. On a first run it
+draws a 20-character one, shows it **once**, and keeps only its bcrypt hash.
+
+It is shown three ways at once, because a launcher can throw the first two away:
+
+- in the log the process writes;
+- in a message box, on Windows;
+- in `PASSWORD-ONCE.txt` in the state directory, which deletes itself at your
+  first successful login.
+
+Then open **http://127.0.0.1:5823** and sign in as `admin`.
+
+Lost it? `kubetower --reset-password` draws another. Nothing can give the old one
+back.
+
+## Next
+
+- [Install](/docs/install) — putting it on the machine properly, and the flags it takes.
+- [Configuration](/docs/configuration) — every `KT_` variable, what it defaults to.
+- [Troubleshooting](/docs/troubleshooting) — when a cluster does not answer.

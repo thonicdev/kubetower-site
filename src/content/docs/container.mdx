@@ -1,0 +1,114 @@
+---
+title: Run in a container
+description: The same binary in an image, with your kubeconfig mounted read-only.
+order: 3
+---
+
+Worth preferring when you would rather not install anything on the host: the
+console's view of your filesystem is then exactly the mount you gave it.
+
+## Build the image
+
+No image is published yet. The repository builds one:
+
+```bash
+git clone https://github.com/thonicdev/kubetower
+cd kubetower
+docker build -t kubetower:local .
+```
+
+## Run it
+
+```bash
+docker run --rm \
+  -p 127.0.0.1:5823:5823 \
+  -p 127.0.0.1:30000-30031:30000-30031 \
+  -v "$HOME/.kube:/home/kubetower/.kube:ro" \
+  -v kubetower-state:/var/lib/kubetower \
+  -e KT_LISTEN=":5823" \
+  -e KUBECONFIG=/home/kubetower/.kube/config \
+  kubetower:local
+```
+
+Then read the drawn password out of the container's log, and open
+**http://127.0.0.1:5823**.
+
+Three of those lines are not decoration:
+
+- **`KT_LISTEN=":5823"`, not loopback.** Docker cannot route a published port to
+  a socket bound to the container's own loopback. A listener on `127.0.0.1`
+  inside the container is reachable from nothing: the mapping exists, the port
+  shows in `docker ps`, and a dial from the host is refused. The image sets this
+  for you; it is spelled out here because it is the one value that must differ
+  from the host default.
+- **The kubeconfig is mounted read-only.** The console reads the file describing
+  your clusters. A process holding administrator credentials has no business
+  being able to rewrite where they point.
+- **The port range is published.** A port-forward allocates its local port out of
+  `KT_FORWARD_PORTS`, and a port the kernel picked inside the container's network
+  namespace could never be dialled from your browser. Publish the range or
+  forwards will open and be unreachable.
+
+## What is in the image
+
+| | |
+| --- | --- |
+| Base | Alpine, with `kubectl`, `helm`, `aws-cli`, `bash`, `tini` |
+| Runs as | uid 100, gid 101 — not root |
+| Listens on | `5823` |
+| State | `/var/lib/kubetower`, which wants a volume or the rail resets on every run |
+| Health | `GET /kt-healthz`, which answers before there is a session |
+
+`kubectl` and `helm` are in the image because the console's terminal is a prompt
+already pointed at the cluster on screen — without them it would be a prompt with
+nothing to type.
+
+## The password, in a container
+
+Same mechanism as on the host: a password is drawn on the first start and printed
+once, and the state volume keeps its hash. Read it out of the log.
+
+For a deployment that must arrive already knowing its password, set
+`KT_PASSWORD_HASH` to a bcrypt hash — **never the password**. The environment is
+consulted first and wins, so a stale credentials file in an old volume can never
+override what you set.
+
+**In a Compose file, every `$` must be doubled.** A bcrypt hash is
+`$2a$14$<salt><digest>` — three variable references as far as Compose is
+concerned, each replaced by nothing, so a 60-character hash arrives as a
+51-character stump and no password matches. Written by hand it is `$$2a$$14$$…`.
+The trap depends on the salt, so the same procedure works on one laptop and locks
+you out on the next. Check what arrived rather than what you wrote:
+
+```bash
+docker compose exec kubetower sh -c 'echo ${#KT_PASSWORD_HASH}'   # must print 60
+```
+
+## Reaching a local cluster
+
+A kind, k3d or minikube cluster declared on `127.0.0.1` is the container's own
+loopback, not yours. Setting `KT_IN_CONTAINER=1` rewrites those addresses to
+`host.docker.internal` and pins the TLS server name, so the certificate still
+verifies.
+
+It is detected from `/.dockerenv` and usually right on its own — set it only to
+override that.
+
+```bash
+docker run ... --add-host host.docker.internal:host-gateway -e KT_IN_CONTAINER=1 kubetower:local
+```
+
+## EKS and SSO
+
+Mount `~/.aws` **read-write**, not read-only: the AWS CLI renews its SSO token
+inside `~/.aws/sso/cache`, and read-only it fails the moment one expires — at
+which point every EKS cluster goes dark at once.
+
+```bash
+-v "$HOME/.aws:/home/kubetower/.aws" \
+-e AWS_CONFIG_FILE=/home/kubetower/.aws/config \
+-e AWS_SHARED_CREDENTIALS_FILE=/home/kubetower/.aws/credentials \
+```
+
+The console signs the EKS token in-process rather than starting `aws eks
+get-token` per context. `KT_AWS_EXEC=1` puts the old path back if you need it.

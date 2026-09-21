@@ -194,7 +194,7 @@ export const downloadPlatforms: DownloadPlatform[] = [
     panelTitle: 'Deploy to Kubernetes',
     panelLede: 'In-cluster deployment for Kubernetes',
     requirement: 'Requires Helm v3.8.0+',
-    footerLink: { label: 'Cluster deployment documentation', href: '/docs/architecture' },
+    footerLink: { label: 'Cluster deployment documentation', href: '/docs/helm' },
     command: [
       [
         { text: 'helm', tone: 'primary' },

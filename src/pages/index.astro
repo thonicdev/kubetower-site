@@ -2,9 +2,10 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import Hero from '~/components/home/Hero.astro';
 import ScreenshotSlider from '~/components/home/ScreenshotSlider.astro';
-import FeatureSection from '~/components/home/FeatureSection.astro';
+import FeatureCarousel from '~/components/home/FeatureCarousel.astro';
 import Profiles from '~/components/home/Profiles.astro';
-import { aiFeatures, aiIntro, highlights, highlightsIntro } from '~/config/landing';
+import Faq from '~/components/home/Faq.astro';
+import { highlights, highlightsIntro } from '~/config/landing';
 import { site } from '~/config/site';
 ---
 
@@ -12,7 +13,7 @@ import { site } from '~/config/site';
   <Hero />
   <ScreenshotSlider />
 
-  <FeatureSection
+  <FeatureCarousel
     id="highlights"
     title={highlightsIntro.title}
     lede={highlightsIntro.lede}
@@ -21,6 +22,5 @@ import { site } from '~/config/site';
   />
 
   <Profiles />
-
-  <FeatureSection id="ai" title={aiIntro.title} lede={aiIntro.lede} items={aiFeatures} divider />
+  <Faq />
 </BaseLayout>

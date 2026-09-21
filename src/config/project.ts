@@ -17,9 +17,9 @@ export const project = {
 
   /**
    * The licence the console is published under, by its SPDX identifier.
-   * Named in exactly one place: it appears in the hero badge, the spec strip
-   * and the footer, and three copies of a licence name is how a site ends up
-   * claiming two different ones.
+   * Named in exactly one place: it appears in the spec strip, the FAQ and the
+   * footer, and three copies of a licence name is how a site ends up claiming
+   * two different ones.
    */
   license: 'AGPL-3.0',
 } as const;

@@ -1,0 +1,83 @@
+---
+/**
+ * One accent card: an icon tile, a title, and the few lines under it.
+ *
+ * It is its own file rather than markup inside the carousel because the card is
+ * the thing that gets restyled and the carousel is the thing that gets retuned,
+ * and reading either should not mean scrolling past the other. The tone table
+ * lives here for the same reason: it is the card's, not its container's.
+ */
+import Icon from '../Icon.astro';
+import SpotlightCard from '../ui/SpotlightCard.astro';
+import type { Highlight, Tone } from '~/config/landing';
+
+interface Props {
+  item: Highlight;
+  /** The element the card renders as; `li` inside a list, `div` in a slide. */
+  as?: 'div' | 'li' | 'article';
+  class?: string;
+}
+
+const { item, as = 'li', class: className }: Props = Astro.props;
+
+const tones: Record<Tone, { border: string; icon: string; title: string; dot: string }> = {
+  primary: {
+    border: 'hover:border-primary/50 hover:shadow-primary/5',
+    icon: 'text-primary group-hover:bg-primary/10',
+    title: 'group-hover:text-primary',
+    dot: 'bg-primary/60',
+  },
+  secondary: {
+    border: 'hover:border-secondary/50 hover:shadow-secondary/5',
+    icon: 'text-secondary group-hover:bg-secondary/10',
+    title: 'group-hover:text-secondary',
+    dot: 'bg-secondary/60',
+  },
+  tertiary: {
+    border: 'hover:border-tertiary/50 hover:shadow-tertiary/5',
+    icon: 'text-tertiary group-hover:bg-tertiary/10',
+    title: 'group-hover:text-tertiary',
+    dot: 'bg-tertiary/60',
+  },
+  error: {
+    border: 'hover:border-error/50 hover:shadow-error/5',
+    icon: 'text-error group-hover:bg-error/10',
+    title: 'group-hover:text-error',
+    dot: 'bg-error/60',
+  },
+};
+
+const tone = tones[item.tone];
+---
+
+<SpotlightCard
+  as={as}
+  tone={item.tone}
+  class:list={[
+    'group flex h-full flex-col rounded-xl border border-outline-variant/80 bg-surface-container-low p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
+    tone.border,
+    className,
+  ]}
+>
+  <div
+    class:list={[
+      'mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container transition-all duration-300 group-hover:scale-110',
+      tone.icon,
+    ]}
+  >
+    <Icon name={item.icon} size={22} />
+  </div>
+  <h3 class:list={['mb-3 text-base font-semibold text-white transition-colors', tone.title]}>
+    {item.title}
+  </h3>
+  <ul class="space-y-1.5 text-xs leading-relaxed text-on-surface-variant">
+    {
+      item.points.map((point) => (
+        <li class="flex items-start gap-2">
+          <span class:list={['mt-1.5 h-1 w-1 shrink-0 rounded-full', tone.dot]} />
+          {point}
+        </li>
+      ))
+    }
+  </ul>
+</SpotlightCard>

@@ -97,6 +97,22 @@
        under it. */
     scroll-padding-top: 5rem;
     color-scheme: dark;
+
+    /* No page of this site is meant to scroll sideways, and on mobile the cost
+       of one that accidentally does is not a stray scrollbar - it is the
+       header. A fixed element sizes against the layout viewport, and a mobile
+       browser widens the layout viewport to fit an overflowing document, so a
+       single decorative box overhanging the screen makes the navbar render
+       wider than the phone. That is what happened on 2026-09-21 (Hero's 760px
+       glow: document 575px at a 390px viewport, header 575px with it).
+       Fixing the element is the real repair; this stops the next one from
+       reaching the header at all.
+
+       `clip` rather than `hidden` deliberately: `hidden` would make the root a
+       scroll container and break `position: sticky` and the smooth scrolling
+       set above. With the other axis left `visible`, `clip` on one axis alone
+       leaves vertical scrolling untouched. */
+    overflow-x: clip;
   }
 
   body {

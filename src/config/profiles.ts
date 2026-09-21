@@ -1,37 +1,49 @@
 /**
- * The two ways the console is deployed, side by side.
+ * The two ways the console is deployed, as one comparison matrix.
  *
- * A comparison is only useful when both columns answer the same questions in
- * the same order, so the rows are a list per profile rather than free markup —
- * the component renders whatever is here, and a question added to one card
- * without the other becomes visible immediately.
+ * The questions are a single list rather than a list per profile: each row
+ * carries both answers, keyed by profile id, so the type system refuses a row
+ * that answers for one surface and not the other — which is the way a
+ * comparison stops being a comparison.
+ *
+ * An answer is a verdict first and prose second. The tick or the cross is what
+ * a reader scans; the note exists only where the mark alone would mislead —
+ * "no" against single sign-on means a local password, not no authentication.
  */
-export type ValueTone = 'primary' | 'tertiary' | 'plain' | 'muted';
+export type ProfileId = 'desktop' | 'in-cluster';
 
-export interface ProfileRow {
-  /** The question, identical across both profiles. */
+/** `partial` is the honest third state: it is available, with a real limit. */
+export type Answer = 'yes' | 'no' | 'partial';
+
+export interface Verdict {
+  answer: Answer;
+  /** A few words, only where the mark alone would be read wrongly. */
+  note?: string;
+}
+
+export interface ComparisonRow {
+  /** The question, asked once and answered by both columns. */
   label: string;
-  /** This profile's answer. */
-  value: string;
-  icon: string;
-  /** The answer's colour: an accent where it is a strength, muted where it is a limit. */
-  tone: ValueTone;
-  /** The icon's colour, where the answer reads plain but the icon should not. */
-  iconTone?: ValueTone | 'error';
+  answers: Record<ProfileId, Verdict>;
 }
 
 export interface Profile {
-  id: string;
+  id: ProfileId;
   icon: string;
   title: string;
+  /**
+   * The name in a narrow column. Below md the comparison has no column headers
+   * — each answer names its own surface — and the full title repeated eighteen
+   * times is what made that unreadable.
+   */
+  short: string;
   /** The one-line qualifier under the title. */
   subtitle: string;
   /** Who it is for. */
   audience: string;
   tone: 'primary' | 'tertiary';
-  /** Draws the emphasised border. Exactly one profile should carry it. */
+  /** Draws the emphasised column. Exactly one profile should carry it. */
   featured?: boolean;
-  rows: ProfileRow[];
   cta: {
     label: string;
     icon: string;
@@ -51,50 +63,11 @@ export const profiles: Profile[] = [
     id: 'desktop',
     icon: 'lucide:laptop',
     title: 'Desktop application',
-    subtitle: 'Standalone binary • macOS • Windows • Linux',
-    audience: 'Best for individual SREs, cluster operators, and air-gapped workstations.',
+    short: 'Desktop',
+    subtitle: 'MacOS, Windows, Linux',
+    audience: 'For individual DevOps, SREs and isolated workstations.',
     tone: 'primary',
     featured: true,
-    rows: [
-      {
-        label: 'Multi-cluster switching',
-        value: 'Every context at once',
-        icon: 'lucide:circle-check',
-        tone: 'tertiary',
-      },
-      {
-        label: 'Claude connector',
-        value: 'Full local PTY stream',
-        icon: 'lucide:sparkles',
-        tone: 'primary',
-      },
-      {
-        label: 'Credential boundary',
-        value: 'Your own kubeconfig, read in place',
-        icon: 'lucide:key',
-        tone: 'plain',
-        iconTone: 'tertiary',
-      },
-      {
-        label: 'Port forwarding',
-        value: 'Loopback, on your machine',
-        icon: 'lucide:arrow-left-right',
-        tone: 'tertiary',
-      },
-      {
-        label: 'Session',
-        value: 'Stateless, on your machine',
-        icon: 'lucide:shield',
-        tone: 'tertiary',
-      },
-      {
-        label: 'Authentication',
-        value: 'A local password, no account',
-        icon: 'lucide:lock',
-        tone: 'plain',
-        iconTone: 'primary',
-      },
-    ],
     cta: {
       label: 'Download the binary',
       icon: 'lucide:download',
@@ -105,54 +78,83 @@ export const profiles: Profile[] = [
     id: 'in-cluster',
     icon: 'lucide:anchor',
     title: 'In-cluster deployment',
-    subtitle: 'Helm chart • behind your ingress',
-    audience: 'Best for engineering teams, compliance audits, and centralised access.',
+    short: 'In-cluster',
+    subtitle: 'Helm chart',
+    audience: 'For engineering teams, compliance audits and centralised access.',
     tone: 'tertiary',
-    rows: [
-      {
-        label: 'Multi-cluster switching',
-        value: 'The cluster it runs in',
-        icon: 'lucide:minus',
-        tone: 'muted',
-      },
-      {
-        label: 'Claude connector',
-        value: 'Disabled — would hold pod credentials',
-        icon: 'lucide:ban',
-        tone: 'muted',
-        iconTone: 'error',
-      },
-      {
-        label: 'Credential boundary',
-        value: 'Service account, checked per user',
-        icon: 'lucide:shield-check',
-        tone: 'plain',
-        iconTone: 'tertiary',
-      },
-      {
-        label: 'Port forwarding',
-        value: 'Through the ingress only',
-        icon: 'lucide:git-fork',
-        tone: 'muted',
-      },
-      {
-        label: 'Session',
-        value: 'Server-side, revocable',
-        icon: 'lucide:shield',
-        tone: 'tertiary',
-      },
-      {
-        label: 'Authentication',
-        value: 'Your identity provider, over OIDC',
-        icon: 'lucide:users',
-        tone: 'plain',
-        iconTone: 'tertiary',
-      },
-    ],
     cta: {
       label: 'Copy the Helm command',
       icon: 'lucide:copy',
       copy: 'helm install kubetower oci://ghcr.io/thonicdev/charts/kubetower',
+    },
+  },
+];
+
+export const comparison: ComparisonRow[] = [
+  {
+    label: 'Every cluster at once',
+    answers: {
+      desktop: { answer: 'yes', note: 'All the contexts in your kubeconfig' },
+      'in-cluster': { answer: 'no', note: 'Only the cluster it runs in' },
+    },
+  },
+  {
+    label: 'Nothing to deploy',
+    answers: {
+      desktop: { answer: 'yes', note: 'One binary, no change to the cluster' },
+      'in-cluster': { answer: 'no', note: 'A Helm release you operate' },
+    },
+  },
+  {
+    label: 'Shared by the whole team',
+    answers: {
+      desktop: { answer: 'no', note: '' },
+      'in-cluster': { answer: 'yes', note: 'One URL for everyone' },
+    },
+  },
+  {
+    label: 'Single sign-on',
+    answers: {
+      desktop: { answer: 'no' },
+      'in-cluster': { answer: 'yes', note: 'Your identity provider, over OIDC' },
+    },
+  },
+  {
+    label: 'Your own permissions apply',
+    answers: {
+      desktop: { answer: 'yes', note: 'Your kubeconfig' },
+      'in-cluster': { answer: 'yes', note: 'Your roles and bindings' },
+    },
+  },
+  {
+    label: 'Port forwarding',
+    answers: {
+      desktop: { answer: 'yes' },
+      'in-cluster': { answer: 'partial', note: 'Through the ingress only' },
+    },
+  },
+  {
+    // Not "Claude connector": a row label in a feature table is a feature name,
+    // and the name is Anthropic's. The permitted form is the plain-text note.
+    // See the comment on the assistant card in `landing.ts`.
+    label: 'Assistant terminal',
+    answers: {
+      desktop: { answer: 'yes', note: 'Runs Claude Code' },
+      'in-cluster': { answer: 'yes', note: 'Runs Claude Code' },
+    },
+  },
+  {
+    label: 'Local shell',
+    answers: {
+      desktop: { answer: 'yes', note: 'A terminal on your own machine' },
+      'in-cluster': { answer: 'no' },
+    },
+  },
+  {
+    label: 'Exec into a container',
+    answers: {
+      desktop: { answer: 'yes' },
+      'in-cluster': { answer: 'yes' },
     },
   },
 ];
