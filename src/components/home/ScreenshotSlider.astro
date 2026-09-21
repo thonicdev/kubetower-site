@@ -1,19 +1,38 @@
 ---
 /**
- * The captures, in a Swiper slider.
+ * The captures, in a Swiper slider, with PhotoSwipe behind it.
  *
- * Only the four modules the slider uses are imported — navigation, pagination,
- * keyboard, a11y — rather than `swiper/bundle`, which carries every effect and
- * the autoplay, virtual, thumbs and zoom modules the page never asks for. Same
- * for the stylesheet: `swiper/css` is the layout, and the arrows and the
- * bullets are ours, so their stylesheets are not pulled in.
+ * Two libraries, one job each. Swiper is the strip on the page: only the four
+ * modules it uses are imported — navigation, pagination, keyboard, a11y —
+ * rather than `swiper/bundle`, which carries every effect and the autoplay,
+ * virtual, thumbs and zoom modules the page never asks for.
+ *
+ * PhotoSwipe is the full-screen viewer. It was hand-wired first — a <dialog>
+ * around a second Swiper with its zoom module — and that worked, but every
+ * one of pinch, double-tap, pan, the drag guard, the scroll lock and the
+ * focus handling was ours to keep right. PhotoSwipe is the library that owns
+ * that problem, its chrome is a counter and two buttons, and what is left
+ * here is the twenty lines below.
  *
  * The slides are in the markup and the images go through astro:assets, so the
- * captures are responsive webp with a srcset whether Swiper loads or not.
+ * captures are responsive webp with a srcset whether either library loads or
+ * not — and each one is an <a> to the full capture, so with no JavaScript at
+ * all clicking one still opens it.
  */
-import { Image } from 'astro:assets';
+import { getImage, Image } from 'astro:assets';
 import Icon from '../Icon.astro';
 import { screenshots } from '~/config/screenshots';
+
+/* PhotoSwipe needs the URL and the intrinsic size of the image it will show,
+   at build time. `getImage` produces the same optimised webp the slide's own
+   srcset already carries at its largest width, so opening the viewer on a
+   desktop that loaded that candidate costs no second download. */
+const shots = await Promise.all(
+  screenshots.map(async (shot) => ({
+    ...shot,
+    full: await getImage({ src: shot.image, width: shot.image.width, format: 'webp' }),
+  })),
+);
 ---
 
 <section id="console" class="mx-auto max-w-6xl scroll-mt-24 px-6 pt-10 pb-4">
@@ -34,26 +53,49 @@ import { screenshots } from '~/config/screenshots';
           <span class="font-medium text-white">kubetower</span>
         </div>
 
-        <span class="hidden font-mono text-[11px] text-on-surface-variant/70 sm:inline">
-          <span data-slider-position>1</span> / {screenshots.length}
-        </span>
+        <div class="flex items-center gap-2">
+          <span class="hidden font-mono text-[11px] text-on-surface-variant/70 sm:inline">
+            <span data-slider-position>1</span> / {screenshots.length}
+          </span>
+          <!-- The affordance, rather than only a cursor: on a touch screen
+               there is no cursor to change, and the frame otherwise looks
+               like a picture. -->
+          <button
+            type="button"
+            data-slider-expand
+            class="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-highest hover:text-primary"
+            aria-label="Enlarge this capture"
+          >
+            <Icon name="lucide:expand" size={15} />
+          </button>
+        </div>
       </div>
 
       <!-- Track -->
       <div class="swiper" data-slider-swiper>
         <div class="swiper-wrapper">
           {
-            screenshots.map((shot, index) => (
+            shots.map((shot, index) => (
               <div class="swiper-slide">
-                <Image
-                  src={shot.image}
-                  alt={shot.alt}
-                  widths={[720, 1080, 1440, shot.image.width]}
-                  sizes="(max-width: 1024px) 100vw, 1024px"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  decoding={index === 0 ? 'sync' : 'async'}
-                  class="block h-auto w-full"
-                />
+                <a
+                  class="block cursor-zoom-in"
+                  href={shot.full.src}
+                  data-pswp-width={shot.image.width}
+                  data-pswp-height={shot.image.height}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Enlarge ${shot.title}`}
+                >
+                  <Image
+                    src={shot.image}
+                    alt={shot.alt}
+                    widths={[720, 1080, 1440, shot.image.width]}
+                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding={index === 0 ? 'sync' : 'async'}
+                    class="block h-auto w-full"
+                  />
+                </a>
               </div>
             ))
           }
@@ -124,12 +166,31 @@ import { screenshots } from '~/config/screenshots';
     pointer-events: none;
     opacity: 0 !important;
   }
+
+  /* PhotoSwipe in this site's palette. Its whole theme is these variables, so
+     this is the entire customisation — no rule of ours overrides one of its
+     own, which is what keeps an upgrade from being a redesign.
+
+     `:root .pswp` rather than `.pswp`, which would be the same specificity as
+     the defaults it is replacing and would then win or lose on which
+     stylesheet the bundler happened to emit last. It wins today; a weight
+     that does not depend on that is worth five characters. */
+  :root .pswp {
+    --pswp-bg: var(--color-surface-container-lowest);
+    --pswp-placeholder-bg: var(--color-surface-container);
+    --pswp-icon-color: var(--color-on-surface);
+    --pswp-icon-color-secondary: var(--color-surface-container-lowest);
+    --pswp-icon-stroke-color: transparent;
+    --pswp-icon-stroke-width: 0;
+  }
 </style>
 
 <script>
   import Swiper from 'swiper';
   import { A11y, Keyboard, Navigation, Pagination } from 'swiper/modules';
   import 'swiper/css';
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
 
   import { screenshots } from '~/config/screenshots';
 
@@ -139,7 +200,7 @@ import { screenshots } from '~/config/screenshots';
   if (root && container) {
     const position = root.querySelector<HTMLElement>('[data-slider-position]');
 
-    new Swiper(container, {
+    const slider = new Swiper(container, {
       modules: [Navigation, Pagination, Keyboard, A11y],
       slidesPerView: 1,
       speed: 420,
@@ -174,6 +235,43 @@ import { screenshots } from '~/config/screenshots';
           if (position) position.textContent = String(swiper.activeIndex + 1);
         },
       },
+    });
+
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: container,
+      children: 'a',
+      /* The core — 17 kB gzipped, its own chunk — arrives on the first open
+         rather than on page load. */
+      pswpModule: () => import('photoswipe'),
+      bgOpacity: 0.97,
+      padding: { top: 16, bottom: 16, left: 12, right: 12 },
+      /* What a click, a double-tap or the zoom button steps up to; a pinch
+         still runs free up to `maxZoomLevel`. The captures are ~1700px wide,
+         so on a phone 2.5× is well inside the source. */
+      secondaryZoomLevel: 2.5,
+      maxZoomLevel: 4,
+      wheelToZoom: true,
+    });
+
+    /* The drag guard, through PhotoSwipe's own hook rather than a listener of
+       ours racing its listener. Swiper binds a capture-phase click handler on
+       this same element and cancels the default action, so a pointer that
+       dragged the strip still delivers a click here; `allowClick` is how
+       Swiper records that the pointer travelled, and -1 is how PhotoSwipe is
+       told to ignore a click. */
+    lightbox.addFilter('clickedIndex', (index) => (slider.allowClick ? index : -1));
+
+    lightbox.init();
+
+    root.querySelector<HTMLButtonElement>('[data-slider-expand]')?.addEventListener('click', () => {
+      lightbox.loadAndOpen(slider.activeIndex);
+    });
+
+    /* Leaving the viewer on capture 2 and finding the strip still on capture 1
+       is the kind of small lie that makes a gallery feel broken. */
+    lightbox.on('close', () => {
+      const index = lightbox.pswp?.currIndex;
+      if (typeof index === 'number') slider.slideTo(index, 0);
     });
   }
 </script>
