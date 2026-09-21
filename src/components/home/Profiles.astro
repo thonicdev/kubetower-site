@@ -9,28 +9,33 @@
  * is the sans one — mono is for commands, and there are none here.
  *
  * `md:contents` is what makes it one markup rather than two: below md each row
- * is its own card with the column named inside every cell, and at md the row
- * box dissolves and its three cells become columns of the surrounding grid.
+ * is its own card, and at md the row box dissolves and its three cells become
+ * columns of the surrounding grid.
+ *
+ * Below md the two surfaces are **marks only** — a question, a tick, a cross,
+ * three columns and no prose. The notes are what a phone has no room for and
+ * what made this unreadable twice, so they are behind the mark: tap one and its
+ * sentence opens under the row. A column header names the two icons once, at
+ * the top, because nothing else in a row can.
+ *
+ * The two breakpoints therefore hold different markup rather than one markup
+ * bent twice: each answer is rendered as a mobile button and again as a desktop
+ * cell, one `md:hidden` and the other `hidden md:flex`. That costs the note
+ * text twice in the document and buys two layouts that cannot interfere — no
+ * padding or border rule has to out-rank another, and an element hidden at a
+ * breakpoint is `display: none`, so it is not a grid item there at all. That
+ * last point is what keeps `md:contents` honest: at md the outer grid sees
+ * exactly the question and the two desktop cells.
  */
 import Icon from '../Icon.astro';
 import { comparison, profiles, profilesIntro, type Answer } from '~/config/profiles';
 import { withBase } from '~/lib/paths';
 
-/**
- * The three verdicts: the mark, the word a screen reader gets instead — and
- * `word`, the colour that word takes when it is on screen, which is only below
- * md. There, a column has no header to inherit its meaning from, so the answer
- * has to say itself.
- */
-const marks: Record<Answer, { icon: string; chip: string; label: string; word: string }> = {
-  yes: { icon: 'lucide:check', chip: 'bg-tertiary/15 text-tertiary', label: 'Yes', word: 'text-tertiary' },
-  partial: {
-    icon: 'lucide:minus',
-    chip: 'bg-warning/15 text-warning',
-    label: 'Limited',
-    word: 'text-warning',
-  },
-  no: { icon: 'lucide:x', chip: 'bg-error/15 text-error', label: 'No', word: 'text-error' },
+/** The three verdicts, each with the word a screen reader gets instead. */
+const marks: Record<Answer, { icon: string; chip: string; label: string }> = {
+  yes: { icon: 'lucide:check', chip: 'bg-tertiary/15 text-tertiary', label: 'Yes' },
+  partial: { icon: 'lucide:minus', chip: 'bg-warning/15 text-warning', label: 'Limited' },
+  no: { icon: 'lucide:x', chip: 'bg-error/15 text-error', label: 'No' },
 };
 
 const heads = {
@@ -85,53 +90,123 @@ const column = (featured?: boolean) => (featured ? 'bg-primary/[0.04]' : '');
         ))
       }
 
+      <!-- The column header, below md only: the table has no other way to say
+           which mark belongs to which surface. -->
+      <div
+        class:list={[
+          'grid grid-cols-[1fr_3rem_3rem] items-center gap-x-2 border-b px-4 py-2.5 sm:px-5 md:hidden',
+          hairline,
+        ]}
+      >
+        <span class="text-[11px] font-medium tracking-wider text-on-surface-variant/70 uppercase">
+          Tap a mark
+        </span>
+        {profiles.map((profile) => (
+          <span class="flex justify-center">
+            <Icon name={profile.icon} size={18} class={heads[profile.tone].sub} />
+            <span class="sr-only">{profile.title}</span>
+          </span>
+        ))}
+      </div>
+
       <!-- One row per question. -->
       {
-        comparison.map((row) => (
-          <div class:list={['border-b p-4 last:border-b-0 sm:p-5 md:contents', hairline]}>
+        comparison.map((row, index) => (
+          <div
+            class:list={[
+              'grid grid-cols-[1fr_3rem_3rem] items-center gap-x-2 border-b px-4 py-3 last:border-b-0 sm:px-5 md:contents',
+              hairline,
+            ]}
+          >
             <div
               class:list={[
-                'text-base font-semibold text-white md:flex md:items-center md:border-b md:px-6 md:py-4 md:text-sm',
+                'text-sm font-semibold text-white md:flex md:items-center md:border-b md:px-6 md:py-4',
                 hairline,
               ]}
             >
               {row.label}
             </div>
+
+            {/* Below md: the mark alone, and a button wherever there is a note
+                to open. A mark with nothing behind it is not a control. */}
+            {profiles.map((profile) => {
+              const verdict = row.answers[profile.id];
+              const mark = marks[verdict.answer];
+              const chip = [
+                'flex h-7 w-7 items-center justify-center rounded-full',
+                mark.chip,
+              ];
+              return verdict.note ? (
+                <button
+                  type="button"
+                  class="flex cursor-pointer justify-center transition-transform active:scale-90 md:hidden"
+                  aria-expanded="false"
+                  aria-controls={`cmp-${index}-${profile.id}`}
+                  data-note-toggle
+                >
+                  <span class:list={chip}>
+                    <Icon name={mark.icon} size={16} />
+                  </span>
+                  <span class="sr-only">
+                    {profile.title}: {mark.label}. Show detail
+                  </span>
+                </button>
+              ) : (
+                <span class="flex justify-center md:hidden">
+                  <span class:list={chip}>
+                    <Icon name={mark.icon} size={16} />
+                  </span>
+                  <span class="sr-only">
+                    {profile.title}: {mark.label}
+                  </span>
+                </span>
+              );
+            })}
+
+            {/* The notes the marks open, below md only. */}
+            {profiles.map((profile) => {
+              const verdict = row.answers[profile.id];
+              return (
+                verdict.note && (
+                  <p
+                    id={`cmp-${index}-${profile.id}`}
+                    hidden
+                    class="col-span-3 mt-2.5 text-xs leading-snug text-on-surface-variant md:hidden"
+                  >
+                    <span class:list={['font-semibold', heads[profile.tone].sub]}>{profile.short}</span>
+                    <span class="mx-1.5 text-outline">—</span>
+                    {verdict.note}
+                  </p>
+                )
+              );
+            })}
+
+            {/* At md and up: the cell as it has always been, and every class
+                here is free of a breakpoint because the element is `hidden`
+                below one. */}
             {profiles.map((profile) => {
               const verdict = row.answers[profile.id];
               const mark = marks[verdict.answer];
               return (
                 <div
                   class:list={[
-                    'mt-4 flex items-start gap-3 md:mt-0 md:border-b md:border-l md:px-6 md:py-4',
+                    'hidden border-b border-l px-6 py-4 md:flex md:items-center md:gap-3',
                     hairline,
                     column(profile.featured),
                   ]}
                 >
                   <span
                     class:list={[
-                      'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
                       mark.chip,
                     ]}
                   >
                     <Icon name={mark.icon} size={15} />
                     <span class="sr-only">{mark.label}</span>
                   </span>
-                  <div class="min-w-0">
-                    {/* Below md only, and `aria-hidden` because the chip beside
-                        it already carries the same word for a reader. */}
-                    <p class="flex items-baseline gap-2 md:hidden" aria-hidden="true">
-                      <span class="text-sm font-semibold text-white">{profile.short}</span>
-                      <span class:list={['text-[11px] font-bold tracking-wider uppercase', mark.word]}>
-                        {mark.label}
-                      </span>
-                    </p>
-                    {verdict.note && (
-                      <p class="mt-0.5 text-sm leading-snug text-on-surface-variant md:mt-0">
-                        {verdict.note}
-                      </p>
-                    )}
-                  </div>
+                  {verdict.note && (
+                    <p class="min-w-0 text-sm leading-snug text-on-surface-variant">{verdict.note}</p>
+                  )}
                 </div>
               );
             })}
@@ -169,3 +244,21 @@ const column = (featured?: boolean) => (featured ? 'bg-primary/[0.04]' : '');
     </div>
   </div>
 </section>
+
+<script>
+  /* Below md the marks are the whole table, so the sentence behind a mark has
+     to be reachable from it. `hidden` on the paragraph rather than a class:
+     the attribute is what `aria-expanded` is describing, and the two cannot
+     drift apart if one of them is what the browser reads. */
+  document.querySelectorAll<HTMLButtonElement>('[data-note-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const id = button.getAttribute('aria-controls');
+      const note = id ? document.getElementById(id) : null;
+      if (!note) return;
+
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      note.hidden = open;
+    });
+  });
+</script>
