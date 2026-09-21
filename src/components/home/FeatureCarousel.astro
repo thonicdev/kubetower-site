@@ -1,0 +1,256 @@
+---
+/**
+ * The highlights, as a carousel that moves on its own.
+ *
+ * Twenty-odd cards is more than a grid can show without becoming the page, and
+ * a feature list nobody scrolls to the end of is a feature list that stops at
+ * card four. So it advances a card at a time and holds — move, rest, move —
+ * which is Swiper's ordinary autoplay: `delay` is the rest and `speed` is the
+ * move, and the two are named here rather than tuned in the dark.
+ *
+ * Three things are not decoration:
+ *
+ *  1. **It can be stopped.** Content that moves without being asked has to be
+ *     pausable — the button is the control, and hovering or touching the track
+ *     pauses it too, so reading a card never becomes a race.
+ *  2. **`prefers-reduced-motion` starts it paused**, rather than starting it and
+ *     hoping. The cards are all still there; only the motion is gone.
+ *  3. **Off screen, it stops.** A carousel animating in a section nobody is
+ *     looking at is work a laptop pays for and a reader never sees.
+ *
+ * Without JavaScript the track is an ordinary horizontal scroller — the same
+ * fallback the screenshot slider uses, and for the same reason: the cards are
+ * in the markup either way.
+ */
+import Icon from '../Icon.astro';
+import FeatureCard from './FeatureCard.astro';
+import type { Highlight } from '~/config/landing';
+
+interface Props {
+  id: string;
+  title: string;
+  lede: string;
+  items: Highlight[];
+  divider?: boolean;
+}
+
+const { id, title, lede, items, divider = false } = Astro.props;
+---
+
+<section
+  id={id}
+  class:list={['mx-auto max-w-6xl scroll-mt-24 px-6 py-16', divider && 'border-t border-outline-variant/50']}
+  data-features
+>
+  <div class="mx-auto mb-12 max-w-2xl text-center">
+    <h2 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h2>
+    <p class="mt-3 text-sm leading-relaxed text-on-surface-variant sm:text-base">{lede}</p>
+  </div>
+
+  <div class="relative">
+    <!-- The track. The vertical padding is room for the cards' hover lift; the
+         stylesheet below is what lets the shadow out of the frame. -->
+    <div class="swiper py-2" data-features-track>
+      <div class="swiper-wrapper items-stretch">
+        {
+          items.map((item) => (
+            <div class="swiper-slide">
+              <FeatureCard item={item} as="div" class="w-full" />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- Edge fades: the hint that the row continues past the frame. -->
+    <div
+      class="pointer-events-none absolute inset-y-0 left-0 hidden w-8 bg-gradient-to-r from-surface to-transparent sm:block"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute inset-y-0 right-0 hidden w-8 bg-gradient-to-l from-surface to-transparent sm:block"
+      aria-hidden="true"
+    >
+    </div>
+  </div>
+
+  <div class="mt-6 flex items-center justify-center gap-3">
+    <button
+      type="button"
+      data-features-prev
+      aria-label="Previous feature"
+      class="flex cursor-pointer items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest/90 p-2 text-on-surface-variant transition-colors duration-200 hover:border-primary/60 hover:text-primary"
+    >
+      <Icon name="lucide:chevron-left" size={16} />
+    </button>
+
+    <button
+      type="button"
+      data-features-toggle
+      aria-label="Pause the feature carousel"
+      aria-pressed="false"
+      class="flex cursor-pointer items-center gap-2 rounded-full border border-outline-variant bg-surface-container-lowest/90 px-3 py-2 text-[11px] text-on-surface-variant transition-colors duration-200 hover:border-primary/60 hover:text-primary"
+    >
+      <Icon name="lucide:pause" size={14} data-icon="pause" />
+      <Icon name="lucide:play" size={14} data-icon="play" />
+      <span class="font-mono tabular-nums">
+        <span data-features-position>1</span>/{items.length}
+      </span>
+    </button>
+
+    <button
+      type="button"
+      data-features-next
+      aria-label="Next feature"
+      class="flex cursor-pointer items-center justify-center rounded-full border border-outline-variant bg-surface-container-lowest/90 p-2 text-on-surface-variant transition-colors duration-200 hover:border-primary/60 hover:text-primary"
+    >
+      <Icon name="lucide:chevron-right" size={16} />
+    </button>
+  </div>
+</section>
+
+<style is:global>
+  /* A card lifts and casts a shadow when the pointer is on it, and `swiper/css`
+     clips both at the frame with `overflow: hidden` — so the hovered card looks
+     cut off along its top edge. `clip` is the same clipping with a margin
+     allowed around it. A browser that does not know it keeps `hidden`, which is
+     the behaviour this replaces rather than a broken one.
+
+     The margin is deliberately smaller than the gutter: horizontally it lets a
+     shadow reach into the page margin, and no further. */
+  /* Every card the same height, which is the tallest one in the row.
+     `swiper/css` gives a slide `height: 100%` of a wrapper that is itself
+     `height: 100%` of a track with no height at all — a percentage chain
+     resolving to `auto`, so each slide ends up its own content height and the
+     row goes ragged. Cutting the chain is what fixes it: the slide is a flex
+     box of automatic height, the flex line stretches every one of them to the
+     tallest, and the card fills the slide it was given. */
+  [data-features-track] .swiper-slide {
+    height: auto;
+    display: flex;
+  }
+
+  .swiper[data-features-track] {
+    /* Two selectors, not one: `swiper/css` sets `overflow: hidden` on `.swiper`
+       with the same weight a lone attribute selector has, and which of the two
+       wins would then be decided by the order the bundler emitted them in. */
+    overflow: clip;
+    overflow-clip-margin: 1.25rem;
+  }
+
+  /* Until Swiper initialises — and if it never does — the track is a scrollable,
+     snapping strip rather than one card with two dead arrows under it. */
+  [data-features-track]:not(.swiper-initialized) .swiper-wrapper {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1.25rem;
+  }
+
+  [data-features-track]:not(.swiper-initialized) .swiper-slide {
+    scroll-snap-align: center;
+  }
+
+  /* One button, two glyphs: `aria-pressed` is already the state — pressed means
+     the reader stopped it — so the icon follows it rather than a second flag
+     that can disagree with it. */
+  [data-features-toggle][aria-pressed='false'] [data-icon='play'],
+  [data-features-toggle][aria-pressed='true'] [data-icon='pause'] {
+    display: none;
+  }
+</style>
+
+<script>
+  import Swiper from 'swiper';
+  import { A11y, Autoplay, Keyboard, Navigation } from 'swiper/modules';
+  import 'swiper/css';
+
+  const section = document.querySelector<HTMLElement>('[data-features]');
+  const track = section?.querySelector<HTMLElement>('[data-features-track]');
+
+  if (section && track) {
+    const toggle = section.querySelector<HTMLButtonElement>('[data-features-toggle]');
+    const position = section.querySelector<HTMLElement>('[data-features-position]');
+
+    /* Somebody who asked their system for less motion gets the cards without
+       the movement. They can still start it; it just does not start itself. */
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* Two different reasons to be stopped, and only one of them may be undone
+       by scrolling back: a reader who pressed pause stays paused. */
+    let pausedByReader = calm;
+
+    const swiper = new Swiper(track, {
+      modules: [Navigation, Keyboard, Autoplay, A11y],
+      /* The rest between cards, and the move itself. `enabled` rather than
+         `autoplay: false` for the calm case: Swiper reads the rest of this
+         object when the reader presses play, and there would be nothing to
+         read. What that case does lose is the hover pause and the hidden-tab
+         pause, which Swiper only wires when autoplay is enabled at init. */
+      autoplay: {
+        enabled: !calm,
+        delay: 3200,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      speed: 700,
+      loop: true,
+      grabCursor: true,
+      slidesPerView: 1.1,
+      spaceBetween: 20,
+      watchSlidesProgress: true,
+      breakpoints: {
+        640: { slidesPerView: 2.15 },
+        1024: { slidesPerView: 3.2 },
+        1280: { slidesPerView: 4 },
+      },
+      keyboard: { enabled: true, onlyInViewport: true },
+      a11y: {
+        containerMessage: 'What the console is built for',
+        prevSlideMessage: 'Previous feature',
+        nextSlideMessage: 'Next feature',
+        slideLabelMessage: '{{index}} of {{slidesLength}}',
+      },
+      navigation: {
+        prevEl: '[data-features-prev]',
+        nextEl: '[data-features-next]',
+      },
+      on: {
+        /* realIndex rather than a counter of our own: a drag, an arrow, the
+           keyboard and the autoplay all land here, and with a loop only Swiper
+           knows which card that is. */
+        slideChange(instance) {
+          if (position) position.textContent = String(instance.realIndex + 1);
+        },
+      },
+    });
+
+    const paint = (running: boolean) => {
+      toggle?.setAttribute('aria-pressed', running ? 'false' : 'true');
+      toggle?.setAttribute(
+        'aria-label',
+        running ? 'Pause the feature carousel' : 'Play the feature carousel',
+      );
+    };
+
+    paint(!calm);
+
+    toggle?.addEventListener('click', () => {
+      pausedByReader = !pausedByReader;
+      if (pausedByReader) swiper.autoplay.stop();
+      else swiper.autoplay.start();
+      paint(!pausedByReader);
+    });
+
+    /* A carousel animating in a section nobody is looking at is work a laptop
+       pays for and a reader never sees. */
+    new IntersectionObserver(
+      ([entry]) => {
+        if (pausedByReader) return;
+        if (entry?.isIntersecting) swiper.autoplay.start();
+        else swiper.autoplay.stop();
+      },
+      { threshold: 0.2 },
+    ).observe(section);
+  }
+</script>

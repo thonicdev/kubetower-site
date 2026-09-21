@@ -13,7 +13,15 @@ const pathname = Astro.url.pathname;
 >
   <!-- Three columns rather than justify-between: the two outer cells share
        the leftover space equally, so the navigation sits on the page's centre
-       line whatever the brand and the actions happen to measure. -->
+       line whatever the brand and the actions happen to measure.
+
+       Both placed cells name their column, and the actions' `col-start-3` is
+       not decoration. The middle nav is `display: none` below md, and an
+       element with `display: none` is not a grid item at all — so
+       auto-placement handed the actions the *middle* column and the burger
+       came to rest short of the right edge, which is the whole of the bug
+       fixed here. Naming the column makes the layout independent of which
+       cells happen to be rendered. -->
   <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
     <a href={withBase('/')} class="group flex items-center gap-3 justify-self-start">
       <Logo size={32} class="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
@@ -22,7 +30,10 @@ const pathname = Astro.url.pathname;
       </span>
     </a>
 
-    <nav class="hidden items-center gap-6 text-sm text-on-surface-variant md:flex" aria-label="Primary">
+    <nav
+      class="col-start-2 hidden items-center gap-6 text-sm text-on-surface-variant md:flex"
+      aria-label="Primary"
+    >
       {
         primaryNav.map((link) => {
           const active = !link.href.includes('#') && isWithin(pathname, link.href);
@@ -42,7 +53,7 @@ const pathname = Astro.url.pathname;
       }
     </nav>
 
-    <div class="flex items-center gap-2 justify-self-end">
+    <div class="col-start-3 flex items-center gap-2 justify-self-end">
       <GitHubStars />
 
       <button

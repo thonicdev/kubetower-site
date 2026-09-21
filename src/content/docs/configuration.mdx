@@ -1,0 +1,110 @@
+---
+title: Configuration
+description: Every KT_ variable, what it defaults to, and the handful that are worth setting.
+order: 5
+---
+
+Everything is an environment variable prefixed `KT_`. The binary reads them
+whether it was started by a double-click, a shell or Docker.
+
+The list that cannot go stale is
+[`.env.example`](https://github.com/thonicdev/kubetower/blob/main/.env.example) in
+the repository — a test gates it, so every variable the code reads is in that
+file. Prefer it to this page, which is a summary.
+
+## The front door
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_USER` | The login name | `admin` |
+| `KT_PASSWORD_HASH` | The **bcrypt hash** of the password, never the password | empty — one is drawn on the first run and shown once |
+| `KT_SESSION_SECRET` | The session signing key, 32 bytes or more | drawn at start, or persisted in the state directory |
+| `KT_SESSION_TTL` | How long the console may go **unused** before it asks again. It slides: any request pushes the deadline out | `720h` (30 days) |
+| `KT_SESSION_MAX` | The ceiling, counted from the login, however much it is used | `2160h` (90 days) |
+
+**There is no way to start without a password**, and nothing here turns that off.
+An empty `KT_PASSWORD_HASH` does not mean "no password": it means the binary falls
+back to the credentials file and draws one.
+
+`KT_SESSION_MAX` is the one that bounds a **stolen** cookie — an idle window never
+expires for somebody who is using it. Rotating `KT_SESSION_SECRET` is the only
+sign-everybody-out this design has, because the session is stateless.
+
+## Where it listens
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_LISTEN` | The address the binary binds | `127.0.0.1:5823` — the image sets `:5823`, and see [Run in a container](/docs/container) for why |
+| `KT_FORWARD_PORTS` | The range a port-forward allocates its local port from | `30000-30031` |
+
+Leave `KT_FORWARD_PORTS` unset on your own machine: there the kernel picks the
+port and there is nothing to publish. Setting it makes every forward listen on
+`0.0.0.0`, which a published container port needs and a laptop on a shared
+network does not.
+
+## Clusters
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_READONLY_CLUSTERS` | Clusters where writes and mutating commands are refused, comma-separated. The context name or the name in the URL both work | empty |
+| `KT_IN_CONTAINER` | Forces the "running in a container" verdict, which rewrites `127.0.0.1` clusters to `host.docker.internal` | detected from `/.dockerenv` |
+| `KT_AWS_EXEC` | Set it to anything and EKS contexts run `aws eks get-token` again instead of the in-process signing | unset |
+| `KT_NODE_SHELL_IMAGE` | The image a shell on a node runs in. It needs `/bin/sh` and nothing else, and the **node's** runtime pulls it — on an air-gapped cluster, point it at your own registry | `alpine:3.24` |
+
+`KT_READONLY_CLUSTERS` is a guardrail against a mistyped command, **not a trust
+boundary**: the process still holds your credentials. For a real boundary, point
+the context at a read-only ServiceAccount.
+
+## State and the archive
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_STATE_DIR` | The only directory this process writes | `~/.kubetower`, `/var/lib/kubetower` in the image |
+| `KT_ARCHIVE` | Keep a window of cluster events | on |
+| `KT_ARCHIVE_LOGS` | Also keep pod logs | **off** |
+| `KT_ARCHIVE_RETENTION_DAYS` | Days kept, clamped to 1–90 | `7` |
+
+Read this before turning `KT_ARCHIVE_LOGS` on: those are production application
+logs written to the state volume unredacted and unencrypted — whatever an
+application printed, tokens and personal data included. That is a data-retention
+decision, not a console preference.
+
+## The assistant
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_CLAUDE_READONLY` | Whether assistant sessions see the read-only overrides on **every** cluster, not only those in `KT_READONLY_CLUSTERS` | `true` |
+| `KT_CLAUDE_PERMISSION_MODE` | Which mode a session starts in: `auto`, `acceptEdits`, `dontAsk`, `manual`, `plan` | `auto` |
+
+Leave `KT_CLAUDE_READONLY` alone unless you mean it: a model asked to fix a
+workload will happily run `kubectl delete` to fix it. `bypassPermissions` is
+refused as a mode — the dial for a session that may change things is this
+variable, which takes the guardrails away rather than the questions.
+
+## The launch report
+
+| Variable | What | Default |
+| --- | --- | --- |
+| `KT_DIAG` | `on` or `off` — about thirty lines describing this machine, written at every start | on while this is a 0.x build |
+
+It prints the executable, the arguments, the window decision, `PATH` and which of
+`kubectl`, `helm`, `aws` resolve on it, what is in the state directory, and which
+`KT_` variables are set. **A variable's value is printed only if its name is on a
+closed allowlist**; every other one that is set is named and not printed, and a
+second guard refuses any name that reads like a secret.
+
+It is the thing to attach to a bug report.
+
+## Probes
+
+Three paths, two meanings.
+
+| Path | Means | Answers before login |
+| --- | --- | --- |
+| `GET /healthz` | The process is up | yes |
+| `GET /readyz` | The configuration is readable and something answers — **it can fail** | yes |
+| `GET /kt-healthz` | The same readiness verdict, in plain text | yes |
+
+Readiness degrades when the kubeconfig stops reading, or when every context failed
+its last probe. It deliberately does **not** degrade when *some* clusters are
+unreachable: that is the clusters' problem, not the console's.

@@ -1,46 +1,74 @@
 ---
-title: Installing it
-description: The four ways the first release ships, and what each one is for.
-order: 3
+title: Install
+description: Putting the binary on a machine, the flags it takes, and how to remove it.
+order: 2
 ---
 
 import CommandRow from '~/components/ui/CommandRow.astro';
 
-Nothing is published for download yet. This page describes what the first
-release contains; the commands appear here when there is something for them to
-install.
+## Download
+
+Nothing is published yet. When the first version is tagged, a release carries
+five builds — `windows/amd64`, `darwin/arm64`, `darwin/amd64`, `linux/amd64`,
+`linux/arm64` — each archived with the licence beside the binary, and a
+`SHA256SUMS` alongside.
 
 <CommandRow command={null} placeholder="Available at v0" />
 
-## A shell installer
+**Check the checksum before you run it.** A console holds the credentials to
+every cluster you can reach, which makes it worth thirty seconds:
 
-For macOS and Linux, the ordinary case: fetch one binary, put it on your PATH,
-run it. Suitable for a laptop you control and for a jump host you do not want to
-install a package manager on.
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+```
 
-## Homebrew
+Until then, build it — the commands are on [Getting started](/docs).
 
-A tap, for people who would rather have the console upgrade alongside everything
-else they have installed. Same binary, with `brew upgrade` behind it.
+## Let it install itself
 
-## A container image
+The binary puts itself where the machine keeps applications, and takes itself
+back out:
 
-The same binary in an image, with your kubeconfig mounted read-only and the port
-bound to loopback. Worth preferring when you would rather not install anything
-on the host at all — the console's view of your filesystem is then exactly the
-mount you gave it.
+```bash
+kubetower --install      # copies itself into place, adds a launcher
+kubetower --uninstall    # removes both
+```
 
-## A Helm chart
+It is a flag rather than a separate installer on purpose: the file you downloaded
+is the file that installs, so there is no second binary to keep in version step,
+and the checksum you checked covers both.
 
-For the shared in-cluster profile: one console in a cluster, reached through
-your ingress, signed into with your identity provider, and authorising every
-action against the permissions the person already has. See
-[how it is put together](/docs/architecture) for what changes in that profile
-and why.
+## Flags
 
-## Verifying what you downloaded
+| Flag | What it does |
+| --- | --- |
+| `--app` | Opens in its own window: a native frame on Windows, otherwise the browser you already have, without tabs or address bar |
+| `--no-window` | Starts the server only, opens nothing |
+| `--install` | Installs the binary and a launcher for this machine |
+| `--uninstall` | Removes what `--install` put down |
+| `--reset-password` | Draws a new password and prints it once |
+| `--unattended` | No prompts and no window — for a service manager or a script |
+| `--version` | The version, and the revision it was built from |
+| `--help` | The same list, from the binary itself |
 
-A console holds the credentials to every cluster you can reach, which makes it
-worth thirty seconds of checking before you run it. Checksums will be published
-with each release, and the steps to check them will be written here rather than
-left as an exercise.
+## What it writes to your disk
+
+One directory, and you choose it with `KT_STATE_DIR` — `~/.kubetower` by default.
+It holds your rail arrangement, your table layouts, the credentials file and the
+archive.
+
+Everything in it is disposable **except `credentials.json`**, which holds the
+drawn password's hash and the session signing key. Delete it and the next start
+draws a new password.
+
+**It never writes to your kubeconfig.** It reads it where it already lives.
+
+## Uninstall
+
+```bash
+kubetower --uninstall
+rm -rf ~/.kubetower        # or whatever KT_STATE_DIR points at
+```
+
+Nothing else is left behind: no service, no daemon, no system-wide configuration,
+and nothing changed in your kubeconfig.

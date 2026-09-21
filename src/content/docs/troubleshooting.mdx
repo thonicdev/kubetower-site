@@ -1,0 +1,122 @@
+---
+title: Troubleshooting
+description: The failures that actually happen, and which of them are yours to fix.
+order: 6
+---
+
+## Start with the launch report
+
+Every start writes about thirty lines describing **this machine**: the executable,
+the arguments, `PATH` and which of `kubectl`, `helm`, `aws` resolve on it, what is
+in the state directory, and which `KT_` variables are set. Most questions are
+answered there before anyone has to guess.
+
+No value that could be a credential is in it — see
+[Configuration](/docs/configuration#the-launch-report).
+
+## A cluster does not answer
+
+Open the **Health** page before anything else. A Kubernetes client failure is four
+unrelated problems wearing the same coat, and they have four different owners:
+
+| What the page says | Who fixes it |
+| --- | --- |
+| The name does not resolve | networking, or a cluster endpoint that moved |
+| Unauthorized | almost always an SSO session that lapsed — ten seconds to renew |
+| AccessDenied on AssumeRole | an IAM grant. The console cannot influence it, and it fails identically from your own terminal |
+| Nothing answers at all | the cluster |
+
+The distinction is the point: time spent debugging the console over the third row
+is time wasted.
+
+## Every EKS context went dark at once
+
+An SSO token expired. Renew it the way you always do (`aws sso login`), and the
+rail lights up again.
+
+**In a container, mount `~/.aws` read-write.** The AWS CLI renews the token inside
+`~/.aws/sso/cache`; mounted read-only, the renewal fails and every EKS context
+fails with it.
+
+## I lost the password
+
+```bash
+kubetower --reset-password
+```
+
+It draws a new one and prints it once. Nothing can give the old one back — only
+its bcrypt hash was ever kept.
+
+In a container, the drawn password is in the log of the first start; if the state
+volume was deleted, the next start draws another.
+
+## It refuses to start without a password
+
+That is deliberate and not a setting. This process holds administrator credentials
+for production clusters, so starting without a front door is not "less safe", it
+is "anyone who can reach this socket has production".
+
+## The password in my Compose file never works
+
+Every `$` must be doubled. A bcrypt hash is `$2a$14$<salt><digest>`, which Compose
+reads as three variable references and replaces with nothing — so a 60-character
+hash arrives as a stump. Check what arrived rather than what you wrote:
+
+```bash
+docker compose exec kubetower sh -c 'echo ${#KT_PASSWORD_HASH}'   # must print 60
+```
+
+It must print **60**. The trap depends on the salt, so the same procedure can work
+on one machine and lock you out on the next.
+
+## The port shows as published, but nothing connects
+
+`KT_LISTEN` is bound to loopback inside the container. Docker cannot route a
+published port to the container's own loopback: the mapping exists, `docker ps`
+shows it, and the dial is refused. Set `KT_LISTEN=":5823"`.
+
+## A port-forward opens and is unreachable
+
+Publish the range. A forward takes its local port from `KT_FORWARD_PORTS`, and a
+port allocated inside the container's network namespace is not reachable from your
+browser unless the range is mapped:
+
+```bash
+-p 127.0.0.1:30000-30031:30000-30031 -e KT_FORWARD_PORTS=30000-30031
+```
+
+## My kind or k3d cluster is unreachable from the container
+
+Its address is `127.0.0.1`, which inside the container is the container. Set
+`KT_IN_CONTAINER=1` and add `--add-host host.docker.internal:host-gateway`: the
+address is rewritten and the TLS server name is pinned, so the certificate still
+verifies.
+
+## A list is empty and I do not believe it
+
+Then say so in an issue, because that is the failure this console is built to
+refuse: a list that could not be read never renders as a list with nothing in it.
+If you are seeing an empty table where there should be objects, it is a bug and
+not a permission you can adjust.
+
+## The state directory is growing
+
+It is the archive. Retention is 7 days by default, clamped to 1–90, and pod logs
+are off unless you turned them on:
+
+```bash
+KT_ARCHIVE_RETENTION_DAYS=3
+KT_ARCHIVE_LOGS=false
+```
+
+Pruning is a directory removal — the archive is files on disk, one directory per
+day, deliberately not a database.
+
+## Reporting something
+
+Open an issue on [the repository](https://github.com/thonicdev/kubetower/issues).
+What makes a report actionable: the version you ran, how you ran it, what you
+expected, what happened, and the launch report with any credential removed.
+
+For anything you would rather not post in public, use GitHub's **private
+vulnerability reporting** on that repository rather than an issue.

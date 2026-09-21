@@ -1,0 +1,108 @@
+---
+title: Deploy with Helm
+description: One console a team shares, in the cluster, behind your ingress — what it will take, and what is not ready yet.
+order: 4
+---
+
+import CommandRow from '~/components/ui/CommandRow.astro';
+
+## Read this first
+
+**The chart is not published, and the in-cluster profile is not shipped.** Both
+are the next piece of work rather than a delayed announcement. Measured on the
+repository: there is no `deploy/` directory, no chart repository, and no
+`--incluster` flag in the binary.
+
+What is on this page is the contract the deployment is built against — the image,
+the ports, the volume, the probes — because that part is real today and is what
+any deployment of this console has to respect, chart or not. Use it to know what
+to prepare. Do not use it as a changelog.
+
+<CommandRow command={null} placeholder="helm install: available at v0" />
+
+## What the chart will install
+
+| Object | Why |
+| --- | --- |
+| `Deployment` | One replica, `Recreate` strategy — the state is a file on a volume, so two pods writing it is the failure |
+| `Service` | ClusterIP on 5823 |
+| `Ingress` | Optional, and where TLS terminates. The console is not meant to be reached without it |
+| `PersistentVolumeClaim` | RWO, for the state directory |
+| `ServiceAccount` + RBAC | One account for the console, with `create` on `subjectaccessreviews` and nothing more |
+| `Secret` | The session signing key and, if you set one, the password hash |
+
+## What you need before installing
+
+- **An ingress controller and a certificate.** The console holds cluster
+  credentials; it belongs behind TLS.
+- **An identity provider over OIDC.** In this profile, people sign in with your
+  IdP rather than a shared local password.
+- **A StorageClass that can serve RWO.** The rail, the table layouts and the
+  archive live on it.
+- **The permissions people should have, written as ordinary `Role` and
+  `RoleBinding`.** See below — you do not write them in the console.
+
+## How access works in the cluster
+
+**Your RBAC is the RBAC.** The console holds one ServiceAccount and, before every
+action, asks the API server: *may this person do this verb on this resource in
+this namespace?* That is a `SubjectAccessReview`, and the API server answers by
+evaluating its own rules.
+
+Three consequences worth knowing before you plan a rollout:
+
+- **Permissions are ordinary Kubernetes objects.** You can read them back with
+  `kubectl auth can-i --as`, and the console has no permission model of its own to
+  keep in step with yours.
+- **No impersonation.** The ServiceAccount needs `create` on
+  `subjectaccessreviews` and nothing else, so it can become nobody.
+- **Every action is recorded to stdout**, structured: who asked, the verb, the
+  resource, the answer, and the outcome. Never a manifest body, never a value out
+  of a `Secret`. The API server's own audit log cannot say who asked — it sees the
+  ServiceAccount — which is why this record exists and why a failed write to it
+  refuses the action.
+
+## What changes compared with a desktop console
+
+| | On a desktop | In the cluster |
+| --- | --- | --- |
+| Sign-in | a local password | your identity provider, over OIDC |
+| Cluster credentials | your own kubeconfig | one ServiceAccount, checked per person |
+| Clusters | every context in your kubeconfig | the cluster it runs in |
+| Local shell and the assistant | yes | **not present** — they would run with the pod's credentials |
+| Session | stateless | server-side, and revocable |
+
+The last two rows are the design, not a limitation to be lifted later: a shell in
+a shared console runs as the pod, and multi-cluster from a pod means that pod
+holds production credentials for clusters it does not live in.
+
+## The image contract
+
+True today, chart or no chart. If you write your own manifests, this is what they
+have to respect.
+
+| | |
+| --- | --- |
+| Listens on | `:5823` — not loopback, or nothing can route to it |
+| Runs as | uid 100, gid 101, non-root |
+| State directory | `/var/lib/kubetower`, `KT_STATE_DIR` |
+| Liveness | `GET /healthz` — the process is up |
+| Readiness | `GET /readyz` — **and it has to be able to fail**: it degrades when the kubeconfig stops reading, or when no context answers at all |
+| Also answers | `GET /kt-healthz`, the same readiness verdict in plain text, before any session |
+| Replicas | 1, `Recreate` |
+
+A readiness probe that always answers 200 is not a probe. This one reports the
+one thing the console exists to do — reach clusters — and says so when it cannot.
+
+## Upgrading and removing
+
+<CommandRow command={null} placeholder="helm upgrade / helm uninstall: available at v0" />
+
+The state lives on the volume, so an upgrade keeps arrangements and archive, and
+`helm uninstall` leaves the PVC behind for you to delete deliberately.
+
+## Until it ships
+
+[Run in a container](/docs/container) is the same binary with your kubeconfig
+mounted, which is the closest thing available today — for one operator rather
+than for a team.
