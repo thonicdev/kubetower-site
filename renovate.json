@@ -1,0 +1,57 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Renovate runs self-hosted, once a night, with the operator's token: every branch it pushes is authored by the operator, which is what R1 asks of a product repository. Do not set a bot gitAuthor here.",
+    "Every merge to main deploys the site (deploy.yml), so updates arrive grouped, on Monday morning: a few deploys a week rather than one per package."
+  ],
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 6am on monday"],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 0,
+  "rebaseWhen": "conflicted",
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "description": "A security fix is not held until Monday.",
+    "schedule": ["at any time"],
+    "semanticCommitType": "fix"
+  },
+  "packageRules": [
+    {
+      "description": "config:recommended makes runtime dependencies `fix(deps)`. A dependency bump on a static site is a chore unless it is a security fix. `deps` is in commitlint.config.js's scope-enum, which is why the scope is not left to Renovate's defaults.",
+      "matchPackageNames": ["*"],
+      "semanticCommitType": "chore"
+    },
+    {
+      "description": "A major is a migration, not a bump. It waits on the Dependency Dashboard until somebody ticks it.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Every minor and patch of the site's npm packages in one pull request, Astro and its integrations included: `astro check && astro build` in ci.yml is the whole test, and it tests them together.",
+      "groupName": "site dependencies",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "commitlint's two packages move together, majors included: the CLI and the preset are released in lockstep and a split pair is refused at install.",
+      "groupName": "commitlint",
+      "matchPackageNames": ["@commitlint/cli", "@commitlint/config-conventional"]
+    },
+    {
+      "description": "The workflows' actions, majors included. The Pages actions (configure-pages, upload-pages-artifact, deploy-pages) only run on a push to main, so this pull request's CI does not exercise them: after merging it, check that the deploy run that follows is green.",
+      "groupName": "github actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "setup-node's node-version in ci.yml, deploy.yml and guards.yml, as one runtime. github-actions extracts it as depName `node`, so this rule comes after the actions rule to take it out of that group.",
+      "groupName": "node runtime",
+      "matchDepNames": ["node"]
+    }
+  ]
+}
