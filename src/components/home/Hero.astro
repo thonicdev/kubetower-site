@@ -35,7 +35,14 @@ import { withBase } from '~/lib/paths';
 
   <div class="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
     <h1 class="text-4xl leading-[1.1] font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-      {hero.titleLead}
+      {
+        hero.titleLead.map((line, i) => (
+          <Fragment>
+            {i > 0 && <br class="sm:hidden" />}
+            {line}{' '}
+          </Fragment>
+        ))
+      }
       <br />
       <span class="bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">
         {hero.titleAccent}

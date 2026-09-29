@@ -12,8 +12,17 @@
  */
 
 export const hero = {
-  /** The headline is split so the second half can carry the gradient. */
-  titleLead: 'Open-source multi-cluster',
+  /**
+   * The headline is split so the second half can carry the gradient.
+   *
+   * The lead is a list rather than one string because of where it wraps. At
+   * phone widths "Open-source multi-cluster" is too wide for one line, and the
+   * browser breaks it at the hyphen inside "multi-cluster" - stranding
+   * "cluster" alone on the second line. Each entry here gets its own line
+   * below `sm`, so the break is one we chose; above `sm` they read as one
+   * line again and nothing changes.
+   */
+  titleLead: ['Open-source', 'multi-cluster'],
   titleAccent: 'Kubernetes console.',
   lede: 'Native performance for DevOps and SREs. All your contexts in one fluid UI, powered by a 42MB binary. No bloat, no configuration required.',
 } as const;
