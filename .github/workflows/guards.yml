@@ -12,7 +12,7 @@ jobs:
     name: no machine attribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Refuse machine attribution in the commit range
@@ -30,12 +30,12 @@ jobs:
     name: conventional commits
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: npm install --no-save @commitlint/cli @commitlint/config-conventional
       - name: Lint the commit range
         run: npx commitlint --from "origin/${{ github.base_ref }}" --to HEAD --verbose
@@ -46,10 +46,10 @@ jobs:
     steps:
       # Without the checkout the config file is absent and commitlint fails on
       # every title, valid ones included. A job that cannot pass is not a check.
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: npm install --no-save @commitlint/cli @commitlint/config-conventional
       # A squash merge takes the pull-request title as the commit subject, so a
       # repository that lints only commits has an unenforced convention that
