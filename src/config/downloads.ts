@@ -1,7 +1,14 @@
 import { repoLinks } from './project';
-import { release } from './release';
 
-const version = release.version;
+/**
+ * Stands for the release version wherever one appears. The site carries no
+ * version of its own: the download page asks GitHub for the newest stable
+ * release in the visitor's browser and substitutes it here, and shows nothing
+ * versioned when GitHub does not answer (ReleaseStatus.astro).
+ */
+export const VERSION_TOKEN = '{version}';
+
+const version = VERSION_TOKEN;
 
 export interface Artifact {
   id: string;
@@ -23,6 +30,8 @@ export interface Artifact {
 export interface CommandSegment {
   text: string;
   tone?: 'primary' | 'warning' | 'tertiary';
+  /** The segment is the release version: its line is shown only once one is known. */
+  version?: boolean;
 }
 
 export interface DownloadPlatform {
@@ -47,19 +56,11 @@ export interface DownloadPlatform {
   command?: CommandSegment[][];
 }
 
-/**
- * Where an artefact comes from.
- *
- * GitHub's latest-release endpoint serves the newest release's copy of a named
- * asset, so no URL here carries the version in its path — only the filename
- * does, and that comes from release.version.
- */
-export function assetHref(asset: string): string {
-  return `${repoLinks.releases}/latest/download/${asset}`;
-}
-
 /** The checksum file every release publishes. */
-export const checksumsHref = assetHref('checksums.txt');
+export const checksumsAsset = 'checksums.txt';
+
+/** Whether a command line names the release version. */
+export const isVersionLine = (line: CommandSegment[]) => line.some((segment) => segment.version);
 
 export const downloadIntro = {
   titleLead: 'Get',
@@ -200,16 +201,20 @@ export const downloadPlatforms: DownloadPlatform[] = [
         { text: 'helm', tone: 'primary' },
         { text: ' install kubetower oci://ghcr.io/thonicdev/charts/kubetower \\' },
       ],
-      [{ text: '  --version ' }, { text: version, tone: 'warning' }, { text: ' \\' }],
+      [{ text: '  --version ' }, { text: version, tone: 'warning', version: true }, { text: ' \\' }],
       [{ text: '  --namespace ' }, { text: 'kubetower-system', tone: 'tertiary' }, { text: ' \\' }],
       [{ text: '  --create-namespace' }],
     ],
   },
 ];
 
-/** The command as one line, for the clipboard. */
-export function commandLine(platform: DownloadPlatform): string {
+/**
+ * The command as one line, for the clipboard. Without the version, the lines
+ * naming it are left out, which is what the page shows until one is known.
+ */
+export function commandLine(platform: DownloadPlatform, withVersion: boolean): string {
   return (platform.command ?? [])
+    .filter((line) => withVersion || !isVersionLine(line))
     .map((line) => line.map((segment) => segment.text).join(''))
     .map((line) => line.replace(/\s*\\$/, ''))
     .join(' ')
