@@ -1,78 +1,57 @@
 ---
 title: Getting started
-description: The shortest path from nothing to a console open on your clusters.
+description: What kubetower is, and the shortest path to a console open on your clusters.
 order: 1
 ---
 
-import CommandRow from '~/components/ui/CommandRow.astro';
-
-kubetower is one Go binary that serves its own interface. You run it, you open a
-browser, it talks to the clusters already in your kubeconfig.
+kubetower is a Kubernetes console in a single binary. Start it, open your
+browser, and it shows every cluster in your kubeconfig.
 
 ## What you need
 
-- **A kubeconfig** — the same file `kubectl` reads. `KUBECONFIG` is treated as a
-  list and merged the way `kubectl` merges it.
+- **A kubeconfig**, the same file `kubectl` uses.
 - **A browser.**
 
-Nothing else. No runtime to install on the host, no database, no agent in the
-cluster, no account.
+No database, no agent in the cluster, no account to create.
 
-## Pick where it runs
+## Where it can run
 
-| | Where | Good for | Page |
-| --- | --- | --- | --- |
-| **On your machine** | a binary on your laptop, listening on loopback | one operator, several clusters, air-gapped workstations | [Install](/docs/install) |
-| **In a container** | the same binary in an image, kubeconfig mounted | not installing anything on the host | [Run in a container](/docs/container) |
-| **In a cluster** | one console a team shares, behind your ingress | central access, single sign-on | [Deploy with Helm](/docs/helm) |
+| | Good for | Page |
+| --- | --- | --- |
+| **On your machine** | One person, several clusters | [Install](/docs/install) |
+| **In a container** | Nothing installed on the host | [Run in a container](/docs/container) |
+| **In a cluster** | One console shared by a team | [Run in a cluster](/docs/helm) |
 
-## There is no release yet
+## Quick start
 
-Measured on this repository: `git tag` and `gh release list -R thonicdev/kubetower`
-both return nothing. Until the first tag, the way in is to build it.
-
-<CommandRow command={null} placeholder="Binaries: available at v0" />
+There is no release yet, so build it from source. You need Go, Node 24 and
+pnpm.
 
 ```bash
 git clone https://github.com/thonicdev/kubetower
 cd kubetower
-
-# The interface, compiled into the binary.
-cd web && pnpm install --frozen-lockfile && pnpm run build && cd ..
-
-# The binary.
+pnpm -C web install --frozen-lockfile
+pnpm -C web build
 go build -trimpath -o kubetower ./cmd/kubetower
-```
-
-Go at the version [`go.mod`](https://github.com/thonicdev/kubetower/blob/main/go.mod)
-pins, and Node 22 with pnpm for the interface. If you only touch the backend you
-can skip the first command — the binary then serves a page telling you the
-interface is not built rather than failing to compile.
-
-## The first run
-
-```bash
 ./kubetower
 ```
 
-There is **no way to start it without a password**, and that is not a setting: the
-process holds administrator credentials for production clusters. On a first run it
-draws a 20-character one, shows it **once**, and keeps only its bcrypt hash.
+Build the interface **before** the binary, or the binary shows a "UI not built"
+page.
 
-It is shown three ways at once, because a launcher can throw the first two away:
+## First sign-in
 
-- in the log the process writes;
-- in a message box, on Windows;
-- in `PASSWORD-ONCE.txt` in the state directory, which deletes itself at your
-  first successful login.
+1. On the first start, kubetower creates a password and shows it **once**: in
+   the terminal and in `~/.kubetower/PASSWORD-ONCE.txt` (and in a dialog on
+   Windows).
+2. Open **http://127.0.0.1:5823**.
+3. Sign in as `admin` with that password.
 
-Then open **http://127.0.0.1:5823** and sign in as `admin`.
-
-Lost it? `kubetower --reset-password` draws another. Nothing can give the old one
-back.
+The file is deleted after your first sign-in. Lost the password? Run
+`kubetower --reset-password` to get a new one.
 
 ## Next
 
-- [Install](/docs/install) — putting it on the machine properly, and the flags it takes.
-- [Configuration](/docs/configuration) — every `KT_` variable, what it defaults to.
-- [Troubleshooting](/docs/troubleshooting) — when a cluster does not answer.
+- [Using the console](/docs/using): clusters, lists, logs, shells.
+- [Configuration](/docs/configuration): the settings you can change.
+- [Troubleshooting](/docs/troubleshooting): when something does not work.

@@ -1,74 +1,74 @@
 ---
 title: Install
-description: Putting the binary on a machine, the flags it takes, and how to remove it.
+description: Put kubetower on your machine, the flags it takes, and how to remove it.
 order: 2
 ---
 
-import CommandRow from '~/components/ui/CommandRow.astro';
+## Get the binary
 
-## Download
+There is no release yet. Build it from source as shown in
+[Getting started](/docs#quick-start).
 
-Nothing is published yet. When the first version is tagged, a release carries
-five builds — `windows/amd64`, `darwin/arm64`, `darwin/amd64`, `linux/amd64`,
-`linux/arm64` — each archived with the licence beside the binary, and a
-`SHA256SUMS` alongside.
-
-<CommandRow command={null} placeholder="Available at v0" />
-
-**Check the checksum before you run it.** A console holds the credentials to
-every cluster you can reach, which makes it worth thirty seconds:
+Each release will publish one download per platform and a `checksums.txt`
+file. Check your download before running it:
 
 ```bash
-sha256sum -c SHA256SUMS --ignore-missing
+sha256sum -c checksums.txt --ignore-missing
 ```
 
-Until then, build it — the commands are on [Getting started](/docs).
+## Install it
 
-## Let it install itself
-
-The binary puts itself where the machine keeps applications, and takes itself
-back out:
+The binary installs itself, for your user only. It never asks for admin rights.
 
 ```bash
-kubetower --install      # copies itself into place, adds a launcher
-kubetower --uninstall    # removes both
+./kubetower --install
 ```
 
-It is a flag rather than a separate installer on purpose: the file you downloaded
-is the file that installs, so there is no second binary to keep in version step,
-and the checksum you checked covers both.
+| System | Where it goes |
+| --- | --- |
+| macOS | `~/Applications/KubeTower.app` |
+| Windows | `%LOCALAPPDATA%\Programs\KubeTower`, plus a Start menu entry |
+| Linux | `~/.local/bin/kubetower`, plus an application launcher |
 
 ## Flags
 
 | Flag | What it does |
 | --- | --- |
-| `--app` | Opens in its own window: a native frame on Windows, otherwise the browser you already have, without tabs or address bar |
+| *(none)* | Starts the console on `127.0.0.1:5823` |
+| `--app` | Opens the console in its own window |
 | `--no-window` | Starts the server only, opens nothing |
-| `--install` | Installs the binary and a launcher for this machine |
-| `--uninstall` | Removes what `--install` put down |
-| `--reset-password` | Draws a new password and prints it once |
-| `--unattended` | No prompts and no window — for a service manager or a script |
-| `--version` | The version, and the revision it was built from |
-| `--help` | The same list, from the binary itself |
+| `--unattended` | No dialog, for scripts and services |
+| `--install` | Installs kubetower for your user |
+| `--uninstall` | Removes it, keeps your settings |
+| `--reset-password` | Creates a new password, shows it once |
+| `--version` | Prints the version |
+| `--help` | Prints the flags |
 
-## What it writes to your disk
+On Windows, `--app` uses a native window. On macOS and Linux it opens a Chrome
+or Edge window without tabs, or your usual browser if neither is installed.
 
-One directory, and you choose it with `KT_STATE_DIR` — `~/.kubetower` by default.
-It holds your rail arrangement, your table layouts, the credentials file and the
-archive.
+## Your data
 
-Everything in it is disposable **except `credentials.json`**, which holds the
-drawn password's hash and the session signing key. Delete it and the next start
-draws a new password.
+kubetower keeps its data in one folder: `~/.kubetower` (change it with
+`KT_STATE_DIR`). Terminals also use a temporary folder.
 
-**It never writes to your kubeconfig.** It reads it where it already lives.
+| File | What it holds |
+| --- | --- |
+| `credentials.json` | Your password hash and session key. **Keep it.** |
+| `kubetower.log` | The log |
+| `*.json` | Your layout and preferences |
+| `archive/` | Recent cluster events |
+
+Everything except `credentials.json` can be deleted safely.
+
+kubetower **never writes to your kubeconfig**.
 
 ## Uninstall
 
 ```bash
 kubetower --uninstall
-rm -rf ~/.kubetower        # or whatever KT_STATE_DIR points at
+rm -rf ~/.kubetower
 ```
 
-Nothing else is left behind: no service, no daemon, no system-wide configuration,
-and nothing changed in your kubeconfig.
+On Windows, if the uninstall says so, delete
+`%LOCALAPPDATA%\Programs\KubeTower` by hand.
