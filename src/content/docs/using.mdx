@@ -1,0 +1,110 @@
+---
+title: Using the console
+description: Clusters, lists, details, logs, shells and port-forwards, in a few minutes.
+order: 3
+---
+
+## The layout
+
+| Area | What it is |
+| --- | --- |
+| **Rail** (far left) | Your clusters. Click one to switch. |
+| **Menu** | The kinds of objects: Pods, Deployments, Services… |
+| **Page** | The list or overview you opened |
+| **Drawer** (right) | The details of the object you clicked |
+| **Dock** (bottom) | Logs and terminals, kept open while you navigate |
+
+With a single cluster, the rail is hidden.
+
+## Clusters
+
+Every context in your kubeconfig is a cluster. A coloured dot shows its state:
+
+| Dot | Means |
+| --- | --- |
+| Green | Reachable |
+| Amber | Refused, or could not be read |
+| Red | Could not be reached |
+| Grey | Nothing to show |
+| Blue | Not asked yet (normal right after start) |
+
+The **Health** page explains each failure and who can fix it. Use **Arrange**
+to rename, reorder, hide or group clusters.
+
+## Lists
+
+- **Namespace picker**: one, several, or all namespaces.
+- **Filter box**: type a name, a label (`app=api`), or `column:value`.
+- **Columns**: sort, resize, reorder, show or hide. **⋯** resets them.
+- **Select several rows** to delete, restart, cordon, suspend… in one go.
+
+Custom resources are under **Custom Resources** in the menu.
+
+## Object details
+
+Click a row to open it in the drawer. Tabs:
+
+- **Details**: status, containers, labels, metrics (pods and nodes).
+- **Events**: what happened to this object.
+- **Changes**: who changed which field, and past rollouts.
+- **Manifest**: the YAML. **Edit**, review the changes, then **Apply**.
+
+Secret values stay hidden until you click **Show**.
+
+Actions depend on the kind:
+
+| Kind | Actions |
+| --- | --- |
+| Pod | Restart, Evict, Delete |
+| Deployment, StatefulSet | Restart, Scale, Delete |
+| Node | Cordon, Uncordon, Drain |
+| CronJob | Run now, Suspend, Resume, Delete |
+| DaemonSet | Restart, Delete |
+| ReplicaSet | Scale, Delete |
+| Namespace | None |
+| Others | Delete |
+
+Every action asks for confirmation first.
+
+## Logs and shells
+
+On a pod:
+
+- **Logs**: live output. Pick the container, filter, show timestamps, see the
+  previous run, download.
+- **Shell**: a terminal inside the container.
+
+On a node, **Node shell** opens a terminal on the node itself.
+
+The **Shell** button in the top bar opens a local terminal already pointed at
+the current cluster.
+
+## Port-forward
+
+In a pod or service, find **Ports** under Details and click **Forward**. The button becomes
+the local address. Click **Stop** to close it.
+
+## Helm
+
+**Helm releases** in the menu lists them. Open one to see its revisions, notes and
+values. This view is read-only.
+
+## Claude assistant
+
+On an object, the Claude button opens a Claude Code session in the dock,
+already focused on that cluster and object. It uses your own Claude login.
+
+By default it can only **read**: commands that change the cluster are blocked.
+
+## Keyboard
+
+| Key | Action |
+| --- | --- |
+| `/` or `Ctrl/⌘ K` | Jump to a kind |
+| `Esc` | Close the drawer or dialog |
+| `↑` `↓` `Enter` | Move and pick in menus |
+
+## Settings
+
+**Settings** shows the version, your kubeconfig, and what the archive keeps. You
+can also change the node shell image there.
