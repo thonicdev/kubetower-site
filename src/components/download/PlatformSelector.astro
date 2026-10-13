@@ -8,10 +8,11 @@
  * complete rather than the page being four dead cards.
  */
 import Icon from '../Icon.astro';
+import { repoLinks } from '~/config/project';
 import {
-  assetHref,
-  checksumsHref,
+  checksumsAsset,
   commandLine,
+  isVersionLine,
   downloadPlatforms,
   type Artifact,
   type CommandSegment,
@@ -42,10 +43,7 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
 <div data-platforms>
   <!-- Subheader -->
   <div class="mb-5">
-    <span class="font-mono text-xs font-semibold tracking-wider text-on-surface-variant uppercase">
-      Supported platforms
-    </span>
-    <h2 class="mt-1 text-xl font-bold text-white">Select your operating system</h2>
+    <h2 class="text-xl font-bold text-white">Select your operating system</h2>
   </div>
 
   <!-- 4 platform cards -->
@@ -140,9 +138,10 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
                   </p>
                 </div>
 
-                <div>
+                <div data-release-only hidden>
                   <a
-                    href={assetHref(artifact.asset)}
+                    href={repoLinks.releases}
+                    data-release-asset={artifact.asset}
                     download
                     class:list={[
                       'flex w-full items-center justify-center gap-2 rounded-lg text-xs transition-all active:scale-[0.98]',
@@ -151,11 +150,11 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
                     ]}
                   >
                     {artifact.icon && <Icon name="lucide:download" size={16} class="shrink-0" />}
-                    <span class="truncate">{artifact.label}</span>
+                    <span class="truncate" data-release-label>{artifact.label}</span>
                   </a>
 
                   <div class="mt-3 flex items-center justify-between gap-2 text-[11px] text-on-surface-variant">
-                    <a href={checksumsHref} class="flex items-center gap-1 transition-colors hover:text-primary">
+                    <a href={repoLinks.releases} data-release-asset={checksumsAsset} class="flex items-center gap-1 transition-colors hover:text-primary">
                       <span aria-hidden="true">→</span>
                       SHA256 Checksum
                     </a>
@@ -179,7 +178,8 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
                 </span>
                 <button
                   type="button"
-                  data-copy={commandLine(platform)}
+                  data-copy={commandLine(platform, false)}
+                  data-release-copy={commandLine(platform, true)}
                   class="flex cursor-pointer items-center gap-1.5 text-xs text-on-surface-variant transition-colors hover:text-primary"
                 >
                   <Icon name="lucide:copy" size={14} data-copy-icon />
@@ -189,12 +189,14 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
               </div>
 
               <!-- Code content -->
-              <pre class="overflow-x-auto p-5 font-mono text-xs leading-relaxed text-on-surface select-all sm:text-sm"><code><span class="text-on-surface-variant select-none">$ </span>{platform.command.map((line, lineIndex) => [
-                ...line.map((segment) => (
-                  <span class={segment.tone ? segmentTone[segment.tone] : undefined}>{segment.text}</span>
-                )),
-                lineIndex < platform.command!.length - 1 ? '\n' : '',
-              ])}</code></pre>
+              <pre class="overflow-x-auto p-5 font-mono text-xs leading-relaxed text-on-surface select-all sm:text-sm"><code><span class="text-on-surface-variant select-none">$ </span>{platform.command.map((line, lineIndex) => (
+                <span data-release-only={isVersionLine(line) ? '' : undefined} hidden={isVersionLine(line)}>{[
+                  ...line.map((segment) => (
+                    <span class={segment.tone ? segmentTone[segment.tone] : undefined} data-release-version={segment.version ? '' : undefined}>{segment.text}</span>
+                  )),
+                  lineIndex < platform.command!.length - 1 ? '\n' : '',
+                ]}</span>
+              ))}</code></pre>
             </div>
           </div>
         )}

@@ -1,0 +1,159 @@
+---
+/**
+ * The download page's release pill, and the script that keeps every versioned
+ * thing on the page in step with GitHub.
+ *
+ * The page is built with no version in it. The visitor's browser asks GitHub
+ * for the newest stable release — the highest plain x.y.z tag that is neither
+ * a draft nor a prerelease, compared as semver rather than by date —
+ * and rewrites the pill, the asset filenames and links, and the Helm command
+ * to match. A new release therefore shows up without rebuilding the site.
+ *
+ * Links point at releases/download/<tag>/ rather than releases/latest/: GitHub's
+ * "latest" is whichever release was last marked so, which need not be the
+ * highest semver, and the pill and the buttons must name the same release.
+ *
+ * Everything versioned — the pill, the download buttons and checksum links, the
+ * Helm --version line — is hidden until GitHub has answered, and stays hidden
+ * if it does not (404 while the repository is private, 403 past 60 anonymous
+ * requests an hour): no version is better than a made-up one.
+ */
+import { repoLinks } from '~/config/project';
+import { VERSION_TOKEN } from '~/config/downloads';
+---
+
+<div
+  data-release
+  data-release-api={`${repoLinks.api}/releases?per_page=100`}
+  data-release-base={repoLinks.releases}
+  data-release-token={VERSION_TOKEN}
+  hidden
+  class="mt-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-surface-container px-3.5 py-1.5 text-xs text-on-surface shadow-sm"
+>
+  <span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span>
+  <span class="font-medium text-primary">Latest release: v<span data-release-version></span></span>
+  <span class="text-outline">•</span>
+  <span class="text-on-surface-variant">Released <span data-release-date></span></span>
+</div>
+
+<script>
+  const CACHE_KEY = 'kubetower:release';
+  const TTL_MS = 60 * 60 * 1000;
+  const STABLE = /^v?(\d+)\.(\d+)\.(\d+)$/;
+
+  interface Latest {
+    tag: string;
+    version: string;
+    publishedAt: string;
+  }
+
+  interface GitHubRelease {
+    tag_name?: unknown;
+    draft?: unknown;
+    prerelease?: unknown;
+    published_at?: unknown;
+  }
+
+  /** Major, then minor, then patch: 0.10.0 is above 0.9.9. */
+  function compare(a: number[], b: number[]): number {
+    for (let i = 0; i < 3; i++) {
+      const diff = (a[i] ?? 0) - (b[i] ?? 0);
+      if (diff) return diff;
+    }
+    return 0;
+  }
+
+  /** The highest stable semver among the releases, or null if there is none. */
+  function pickLatest(releases: GitHubRelease[]): Latest | null {
+    let best: { parts: number[]; latest: Latest } | null = null;
+
+    for (const entry of releases) {
+      if (entry.draft || entry.prerelease) continue;
+      if (typeof entry.tag_name !== 'string' || typeof entry.published_at !== 'string') continue;
+
+      const match = STABLE.exec(entry.tag_name);
+      if (!match) continue;
+
+      const parts = match.slice(1, 4).map(Number);
+      if (!best || compare(parts, best.parts) > 0) {
+        best = {
+          parts,
+          latest: { tag: entry.tag_name, version: parts.join('.'), publishedAt: entry.published_at },
+        };
+      }
+    }
+
+    return best?.latest ?? null;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-release]');
+
+  if (root) {
+    const endpoint = root.dataset.releaseApi ?? '';
+    const base = root.dataset.releaseBase ?? '';
+    const token = root.dataset.releaseToken ?? '';
+
+    const apply = (latest: Latest) => {
+      const swap = (text: string) => text.split(token).join(latest.version);
+
+      for (const node of document.querySelectorAll<HTMLElement>('[data-release-version]')) {
+        node.textContent = latest.version;
+      }
+
+      const date = document.querySelector<HTMLElement>('[data-release-date]');
+      if (date) {
+        date.textContent = new Date(latest.publishedAt).toLocaleDateString('en', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        });
+      }
+
+      for (const node of document.querySelectorAll<HTMLElement>('[data-release-only]')) {
+        node.hidden = false;
+      }
+      root.hidden = false;
+
+      for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-release-asset]')) {
+        const asset = swap(link.dataset.releaseAsset ?? '');
+        link.href = `${base}/download/${encodeURIComponent(latest.tag)}/${asset}`;
+        const label = link.querySelector<HTMLElement>('[data-release-label]');
+        if (label) label.textContent = swap(label.textContent ?? '');
+      }
+
+      for (const button of document.querySelectorAll<HTMLElement>('[data-release-copy]')) {
+        button.dataset.copy = swap(button.dataset.releaseCopy ?? '');
+      }
+    };
+
+    let cached: (Latest & { at: number }) | null = null;
+    try {
+      cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null');
+    } catch {
+      cached = null;
+    }
+
+    if (cached && typeof cached.version === 'string' && Date.now() - cached.at < TTL_MS) {
+      apply(cached);
+    } else {
+      fetch(endpoint, { headers: { Accept: 'application/vnd.github+json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+        .then((data: unknown) => {
+          if (!Array.isArray(data)) return;
+          const latest = pickLatest(data);
+          if (!latest) return;
+
+          apply(latest);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...latest, at: Date.now() }));
+          } catch {
+            /* Storage disabled: fetched again on the next visit. */
+          }
+        })
+        .catch(() => {
+          /* Private repository, rate limit, or no network: the pill, the
+             download buttons and the Helm --version line stay hidden. */
+        });
+    }
+  }
+</script>
