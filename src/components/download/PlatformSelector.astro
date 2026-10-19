@@ -8,6 +8,7 @@
  * complete rather than the page being four dead cards.
  */
 import Icon from '../Icon.astro';
+import UnsignedNotice from './UnsignedNotice.astro';
 import { repoLinks } from '~/config/project';
 import {
   checksumsAsset,
@@ -105,6 +106,8 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
             <p class="text-xs text-on-surface-variant">{platform.panelLede}</p>
           </div>
         </div>
+
+        {platform.notice && <UnsignedNotice notice={platform.notice} />}
 
         {platform.artifacts && (
           <div class:list={['mt-6 grid grid-cols-1', columns[platform.columns ?? 2]]}>
