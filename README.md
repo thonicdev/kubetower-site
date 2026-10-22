@@ -13,7 +13,7 @@ npm run build    # static output in dist/
 npm run preview  # serve dist/ exactly as it will be served
 ```
 
-Node 22.12 or newer.
+Node 22.22 or newer.
 
 ## How it is laid out
 
