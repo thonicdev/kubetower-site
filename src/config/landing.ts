@@ -10,7 +10,15 @@
  *     time or a memory ceiling quoted before that is a number somebody made
  *     up, and it is the first thing a sceptical reader checks.
  */
-import { screenshots } from './screenshots';
+import assistant from '~/assets/screenshots/assistant.png';
+import clusters from '~/assets/screenshots/clusters.png';
+import deliveryCenter from '~/assets/screenshots/delivery-center.png';
+import eksNodes from '~/assets/screenshots/eks-nodes.png';
+import helmRelease from '~/assets/screenshots/helm-release.png';
+import inCluster from '~/assets/screenshots/in-cluster.png';
+import podShell from '~/assets/screenshots/pod-shell.png';
+import podsArranged from '~/assets/screenshots/pods-arranged.png';
+import reachability from '~/assets/screenshots/reachability.png';
 
 export const hero = {
   /**
@@ -61,20 +69,6 @@ export interface Highlight {
   tone: Tone;
 }
 
-/**
- * One of the captures under the hero, reused as a card's preview.
- *
- * Read out of `screenshots.ts` rather than imported a second time, so the alt
- * text is written once; and it throws rather than returning nothing, so a
- * renamed capture fails the build instead of quietly turning into a
- * placeholder.
- */
-const capture = (id: string): Preview => {
-  const shot = screenshots.find((s) => s.id === id);
-  if (!shot) throw new Error(`landing.ts: no screenshot "${id}" in screenshots.ts`);
-  return { image: shot.image, alt: shot.alt };
-};
-
 export const highlightsIntro = {
   title: 'Built for people who run the cluster',
   lede: 'A console shaped by what production actually asks of one: your credentials stay yours, the blast radius of a write is bounded, and nothing in the browser can reach an API server.',
@@ -93,6 +87,12 @@ export const highlightsIntro = {
  * card a real capture**, put the PNG in `src/assets/screenshots/`, import it
  * here and set `screenshot: { image, alt }` on that card — nothing else
  * changes. A card left at `null` shows the placeholder, which says so.
+ *
+ * The nine captures are the console's own pages, rendered by its own build at
+ * 1708x653, against made-up clusters rather than anybody's: every context,
+ * namespace, pod, account number and line of output on them is invented,
+ * terminal transcripts included. The assistant's exchange runs in a plain
+ * terminal tab, so its mark appears nowhere on the capture.
  *
  * The rule at the top of this file applies to every one of them: each card is a
  * claim the console makes good on. Nothing here describes a page that is not in
@@ -113,7 +113,10 @@ export const highlights: Highlight[] = [
       'Per-context credentials, isolated',
     ],
     summary: 'Every cluster your kubeconfig names, in one process and one window.',
-    screenshot: capture('overview'),
+    screenshot: {
+      image: clusters,
+      alt: 'The cluster chooser: one card per kubeconfig context, plain names and EKS ARNs side by side, each with its Kubernetes version, a CPU line, CPU and memory used, and how many nodes are ready.',
+    },
   },
   {
     /**
@@ -146,7 +149,10 @@ export const highlights: Highlight[] = [
       'No API key in this project',
     ],
     summary: 'An assistant in the terminal, already pointed at the cluster on screen.',
-    screenshot: null,
+    screenshot: {
+      image: assistant,
+      alt: 'A pod list with the terminal dock open below it on prod-eu-west, where an assistant has run two kubectl commands and explains why a pod is stuck in ImagePullBackOff.',
+    },
   },
   {
     id: 'air-gapped',
@@ -160,7 +166,10 @@ export const highlights: Highlight[] = [
       'The browser never touches the API server',
     ],
     summary: 'Nothing phones home, and only the backend ever speaks to a cluster.',
-    screenshot: null,
+    screenshot: {
+      image: reachability,
+      alt: 'The Cluster page: each kubeconfig context with its Kubernetes version, metrics source and probe time, and one that could not be reached, with the dial error and who can fix it.',
+    },
   },
   {
     /**
@@ -180,7 +189,10 @@ export const highlights: Highlight[] = [
       'Many more to come',
     ],
     summary: 'Pages for what only some clusters run, switched on per cluster.',
-    screenshot: null,
+    screenshot: {
+      image: deliveryCenter,
+      alt: 'The Delivery Center: Argo CD applications counted by sync state, health and project, with the three that need attention drawn as cards first.',
+    },
   },
   {
     id: 'eks',
@@ -194,7 +206,10 @@ export const highlights: Highlight[] = [
       'More tooling to come',
     ],
     summary: 'The AWS profiles you already use, with no second login.',
-    screenshot: null,
+    screenshot: {
+      image: eksNodes,
+      alt: 'The nodes of an EKS cluster, addressed by its ARN: status, taints, CPU, memory and disk gauges, the EKS kubelet version, internal IP and instance type.',
+    },
   },
   {
     id: 'in-cluster',
@@ -208,7 +223,10 @@ export const highlights: Highlight[] = [
       'A ClusterRole drawn from what it asks for',
     ],
     summary: 'The same console deployed with Helm, signing people in through your identity provider.',
-    screenshot: null,
+    screenshot: {
+      image: inCluster,
+      alt: 'The console as deployed in a cluster: no cluster rail, the signed-in person named in the top bar, and the cluster overview with its capacity rings and usage over time.',
+    },
   },
   {
     id: 'shells',
@@ -222,7 +240,10 @@ export const highlights: Highlight[] = [
       'Pod logs that page backwards',
     ],
     summary: 'A prompt on the context, the pod or the node you are reading, and its logs beside it.',
-    screenshot: capture('pods'),
+    screenshot: {
+      image: podShell,
+      alt: "A pod list with the dock open below it on three tabs - a terminal on the context, the pod's logs and a shell inside the pod - the shell showing its environment and a health check.",
+    },
   },
   {
     id: 'helm',
@@ -236,7 +257,10 @@ export const highlights: Highlight[] = [
       'One click from the list',
     ],
     summary: 'Every detail of a Helm release, one click from the list.',
-    screenshot: null,
+    screenshot: {
+      image: helmRelease,
+      alt: 'A Helm release page: status, revision, chart and app versions and when it was last deployed, above every revision Helm kept, a failed upgrade and a rollback among them.',
+    },
   },
   {
     id: 'ui',
@@ -250,6 +274,9 @@ export const highlights: Highlight[] = [
       'CPU and memory in the table',
     ],
     summary: 'A console you arrange once and find the way you left it.',
-    screenshot: capture('overview'),
+    screenshot: {
+      image: podsArranged,
+      alt: 'A pod list at widths its operator set, with CPU and memory drawn as gauges in the table and each context in the rail wearing its own colour.',
+    },
   },
 ];
