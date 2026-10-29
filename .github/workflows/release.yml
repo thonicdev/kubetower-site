@@ -1,0 +1,55 @@
+name: release
+on:
+  push:
+    branches: [main]
+
+# release-please keeps one pull request open against main that holds the next
+# version and its CHANGELOG.md entry. Merging it tags vX.Y.Z on the merge commit
+# and publishes the GitHub release; nothing here builds or uploads anything.
+#
+# Versions come from the Conventional Commits that land on main: fix -> patch,
+# feat -> minor, a breaking change (`!` or BREAKING CHANGE) -> major. Before
+# 1.0.0 a breaking change is a minor instead (bump-minor-pre-major), as semver
+# allows for 0.y.z: going to 1.0.0 is a decision, taken with a
+# `Release-As: 1.0.0` commit footer, not the side effect of one commit. chore,
+# docs, ci, build, refactor, style and test release nothing, so Renovate's
+# chore(deps) updates alone never open a release; its security updates are
+# fix(deps) and do, under Bug Fixes.
+#
+# The first release is 0.1.0: .release-please-manifest.json says 0.0.0, which
+# release-please reads as "never released", so it proposes initial-version from
+# release-please-config.json. From then on the release pull request moves the
+# manifest and package.json together.
+#
+# The release pull request's title, which is also the subject of its commit, is
+# `chore(site): release X.Y.Z`: `release` is not a scope in
+# commitlint.config.js, so the default title would fail guards.yml.
+#
+# Needs Settings -> Actions -> General -> "Allow GitHub Actions to create and
+# approve pull requests". Without it the run fails on opening the pull request
+# rather than doing nothing.
+#
+# A pull request opened with GITHUB_TOKEN triggers no other workflow, so ci.yml
+# and guards.yml do not run on the release pull request on their own: close and
+# reopen it to get them. To have them run on every update, store a token that
+# is not GITHUB_TOKEN (a fine-grained personal access token or a GitHub App
+# token, contents and pull-requests write on this repository) as a repository
+# secret and pass it below as `token:`.
+permissions:
+  contents: write
+  pull-requests: write
+
+# One run at a time; a later push waits rather than racing the one in flight
+# over the same pull request and tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
