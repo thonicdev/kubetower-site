@@ -1,4 +1,4 @@
-import { repoLinks } from './project';
+import { project, repoLinks } from './project';
 
 /**
  * Stands for the release version wherever one appears. The site carries no
@@ -73,6 +73,8 @@ export interface UnsignedNotice {
   lede: Rich;
   /** What the system shows, and what to do about it. */
   steps: { shows: string; what: Rich }[];
+  /** Why the build is unsigned, and where to help pay for signing. */
+  donate: { lede: string; label: string; href: string };
   verify: {
     lede: string;
     shell: string;
@@ -94,6 +96,13 @@ export const downloadIntro = {
   lede: 'Native multi-cluster console for your workstation or cluster. Single binary, no daemon, instant boot.',
 } as const;
 
+/** One line and one link, shared by every unsigned notice. */
+const signingDonate: UnsignedNotice['donate'] = {
+  lede: 'Signing needs a paid certificate, and a donation helps pay for it.',
+  label: 'Donate',
+  href: project.donateUrl,
+};
+
 const macosNotice: UnsignedNotice = {
   title: 'This build is not signed yet',
   lede: [
@@ -113,6 +122,7 @@ const macosNotice: UnsignedNotice = {
       ],
     },
   ],
+  donate: signingDonate,
   verify: {
     lede: `In Terminal, from the folder holding the download and ${checksumsAsset}:`,
     shell: 'Terminal',
@@ -144,6 +154,7 @@ const windowsNotice: UnsignedNotice = {
       ],
     },
   ],
+  donate: signingDonate,
   verify: {
     lede: `In PowerShell, from the folder holding the download and ${checksumsAsset}:`,
     shell: 'PowerShell',
