@@ -15,9 +15,6 @@ export const project = {
   /** The site's own repository, which is public and can always be linked. */
   siteRepoUrl: 'https://github.com/thonicdev/kubetower-site',
 
-  /** Where a visitor can donate. The same account .github/FUNDING.yml names. */
-  donateUrl: 'https://github.com/sponsors/thonicdev',
-
   /**
    * The licence the console is published under, by its SPDX identifier.
    * Named in exactly one place: it appears in the spec strip, the FAQ and the

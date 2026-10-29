@@ -8,7 +8,6 @@
  * (ReleaseStatus.astro) knows it, then becomes the real one.
  */
 import Icon from '../Icon.astro';
-import Button from '../ui/Button.astro';
 import { VERSION_TOKEN, type Rich, type UnsignedNotice } from '~/config/downloads';
 
 interface Props {
@@ -33,19 +32,6 @@ const bold = (text: Rich) => text.map((part) => (typeof part === 'string' ? { te
       <p class="mt-1 text-xs leading-relaxed text-on-surface-variant">
         {bold(notice.lede).map((part) => (part.strong ? <strong class="font-semibold text-white">{part.text}</strong> : part.text))}
       </p>
-      <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs leading-relaxed text-on-surface-variant">
-        <p>{notice.donate.lede}</p>
-        <Button
-          href={notice.donate.href}
-          external
-          variant="surface"
-          aria-label={`${notice.donate.label} to KubeTower on GitHub Sponsors (opens in a new tab)`}
-          class="px-3 py-1.5"
-        >
-          <Icon name="lucide:heart" size={14} />
-          {notice.donate.label}
-        </Button>
-      </div>
 
       <div class="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
         <dl class="space-y-3 text-xs leading-relaxed">

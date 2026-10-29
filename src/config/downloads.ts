@@ -1,4 +1,4 @@
-import { project, repoLinks } from './project';
+import { repoLinks } from './project';
 
 /**
  * Stands for the release version wherever one appears. The site carries no
@@ -73,8 +73,6 @@ export interface UnsignedNotice {
   lede: Rich;
   /** What the system shows, and what to do about it. */
   steps: { shows: string; what: Rich }[];
-  /** Why the build is unsigned, and where to help pay for signing. */
-  donate: { lede: string; label: string; href: string };
   verify: {
     lede: string;
     shell: string;
@@ -96,74 +94,45 @@ export const downloadIntro = {
   lede: 'Native multi-cluster console for your workstation or cluster. Single binary, no daemon, instant boot.',
 } as const;
 
-/** One line and one link, shared by every unsigned notice. */
-const signingDonate: UnsignedNotice['donate'] = {
-  lede: 'Signing needs a paid certificate, and a donation helps pay for it.',
-  label: 'Donate',
-  href: project.donateUrl,
-};
-
 const macosNotice: UnsignedNotice = {
   title: 'This build is not signed yet',
-  lede: [
-    'Signing and notarisation are coming. Until then macOS refuses to open KubeTower the first time, and ',
-    { strong: 'the warning is expected' },
-    `. Check the file against ${checksumsAsset} before you open it.`,
-  ],
+  lede: ['Signing is coming. Until then macOS blocks the first launch, and ', { strong: 'that is expected' }, '.'],
   steps: [
     {
       shows: '“KubeTower” cannot be opened because Apple cannot check it for malicious software.',
-      what: [
-        'Open ',
-        { strong: 'System Settings → Privacy & Security' },
-        ', find the message about KubeTower, click ',
-        { strong: 'Open Anyway' },
-        ' and confirm.',
-      ],
+      what: ['In ', { strong: 'System Settings → Privacy & Security' }, ', click ', { strong: 'Open Anyway' }, '.'],
     },
   ],
-  donate: signingDonate,
   verify: {
-    lede: `In Terminal, from the folder holding the download and ${checksumsAsset}:`,
+    lede: `Check the file, in Terminal, next to ${checksumsAsset}:`,
     shell: 'Terminal',
     lines: [`grep 'kubetower-${VERSION_TOKEN}-arm64.dmg' ${checksumsAsset} | shasum -a 256 --check`],
-    result: 'It prints the file name followed by OK. For the Intel build, use the x64 file’s name.',
+    result: 'It prints OK. For Intel, use the x64 file name.',
   },
 };
 
 const windowsNotice: UnsignedNotice = {
   title: 'This build is not signed yet',
-  lede: [
-    'Code signing is coming. Until then Windows warns before the first run, and ',
-    { strong: 'the warning is expected' },
-    `. Check the file against ${checksumsAsset} before you run it.`,
-  ],
+  lede: ['Signing is coming. Until then Windows warns on the first run, and ', { strong: 'that is expected' }, '.'],
   steps: [
     {
-      shows: 'SmartScreen: “Windows protected your PC”, with the publisher shown as “Unknown publisher”.',
+      shows: 'SmartScreen: “Windows protected your PC”.',
       what: ['Click ', { strong: 'More info' }, ', then ', { strong: 'Run anyway' }, '.'],
     },
     {
-      shows: 'Smart App Control on, as on many new Windows 11 installs: the program is blocked.',
-      what: [
-        'There is ',
-        { strong: 'no Run anyway and no per-app override' },
-        '. The zip holds the same unsigned program, so do not count on it either. Run KubeTower in a cluster instead, with the ',
-        { strong: 'Kubernetes' },
-        ' install. Turning Smart App Control off also works, but on most Windows 11 versions it cannot be turned back on without resetting Windows.',
-      ],
+      shows: 'Smart App Control: the program is blocked.',
+      what: [{ strong: 'No override exists' }, '. Use the ', { strong: 'Kubernetes' }, ' install instead.'],
     },
   ],
-  donate: signingDonate,
   verify: {
-    lede: `In PowerShell, from the folder holding the download and ${checksumsAsset}:`,
+    lede: `Check the file, in PowerShell, next to ${checksumsAsset}:`,
     shell: 'PowerShell',
     lines: [
       `$file = 'kubetower-${VERSION_TOKEN}-setup.exe'`,
       `$want = ((Select-String -Path ${checksumsAsset} -SimpleMatch $file).Line -split '\\s+')[0]`,
       '(Get-FileHash $file -Algorithm SHA256).Hash -eq $want',
     ],
-    result: 'It prints True when the file is the one published. For the zip, put its name in $file.',
+    result: 'It prints True. For the zip, put its name in $file.',
   },
 };
 
