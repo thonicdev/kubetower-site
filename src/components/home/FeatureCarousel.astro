@@ -2,7 +2,7 @@
 /**
  * The highlights, as a carousel that moves on its own.
  *
- * Twenty-odd cards is more than a grid can show without becoming the page, and
+ * Nine cards is more than a grid can show without becoming the page, and
  * a feature list nobody scrolls to the end of is a feature list that stops at
  * card four. So it advances a card at a time and holds — move, rest, move —
  * which is Swiper's ordinary autoplay: `delay` is the rest and `speed` is the
@@ -21,7 +21,17 @@
  * Without JavaScript the track is an ordinary horizontal scroller — the same
  * fallback the screenshot slider uses, and for the same reason: the cards are
  * in the markup either way.
+ *
+ * **Every card opens a preview**, one native `<dialog>` per card, rendered
+ * here rather than built on click so the capture goes through astro:assets
+ * like every other image on the page. `showModal()` is what makes it
+ * accessible without code of ours: the rest of the page goes inert, so focus
+ * cannot leave it; Esc closes it; and the browser hands focus back to the card
+ * that opened it. What is ours is the close button, the click on the backdrop,
+ * and stopping the carousel underneath — a card sliding away behind an open
+ * preview is the card the reader will close it onto.
  */
+import { Image } from 'astro:assets';
 import Icon from '../Icon.astro';
 import FeatureCard from './FeatureCard.astro';
 import type { Highlight } from '~/config/landing';
@@ -35,6 +45,10 @@ interface Props {
 }
 
 const { id, title, lede, items, divider = false } = Astro.props;
+
+/* One id per card's dialog, prefixed by the section's so two carousels on a
+   page could not collide. */
+const previewId = (item: Highlight) => `${id}-preview-${item.id}`;
 ---
 
 <section
@@ -55,7 +69,7 @@ const { id, title, lede, items, divider = false } = Astro.props;
         {
           items.map((item) => (
             <div class="swiper-slide">
-              <FeatureCard item={item} as="div" class="w-full" />
+              <FeatureCard item={item} as="div" class="w-full" previewId={previewId(item)} />
             </div>
           ))
         }
@@ -108,6 +122,54 @@ const { id, title, lede, items, divider = false } = Astro.props;
       <Icon name="lucide:chevron-right" size={16} />
     </button>
   </div>
+
+  <!-- The previews. Outside the track, so Swiper's loop never moves one, and
+       in the top layer once open, so nothing on the page clips it. -->
+  {
+    items.map((item) => (
+      <dialog
+        id={previewId(item)}
+        aria-labelledby={`${previewId(item)}-title`}
+        data-feature-preview
+        class="m-auto w-[calc(100%-2rem)] max-w-3xl overflow-visible rounded-xl border border-outline-variant bg-surface-container-low p-0 text-on-surface shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      >
+        <div class="flex items-center justify-between gap-4 border-b border-outline-variant px-5 py-3">
+          <h2 id={`${previewId(item)}-title`} class="text-base font-semibold text-white">
+            {item.title}
+          </h2>
+          <button
+            type="button"
+            data-feature-close
+            aria-label="Close the preview"
+            class="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-highest hover:text-primary"
+          >
+            <Icon name="lucide:x" size={16} />
+          </button>
+        </div>
+
+        <div class="p-5">
+          {item.screenshot ? (
+            <Image
+              src={item.screenshot.image}
+              alt={item.screenshot.alt}
+              widths={[640, 960, 1280, item.screenshot.image.width]}
+              sizes="(min-width: 800px) 46rem, calc(100vw - 4.5rem)"
+              loading="lazy"
+              class="h-auto w-full rounded-lg border border-outline-variant/60"
+            />
+          ) : (
+            /* No capture yet: a frame the size a capture would take, saying
+               so, rather than a screen of something else. */
+            <div class="flex aspect-[16/7] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-outline-variant bg-surface-container text-on-surface-variant">
+              <Icon name="lucide:image" size={28} />
+              <span class="text-xs">Screenshot coming soon</span>
+            </div>
+          )}
+          <p class="mt-4 text-sm leading-relaxed text-on-surface-variant">{item.summary}</p>
+        </div>
+      </dialog>
+    ))
+  }
 </section>
 
 <style is:global>
@@ -179,6 +241,8 @@ const { id, title, lede, items, divider = false } = Astro.props;
     /* Two different reasons to be stopped, and only one of them may be undone
        by scrolling back: a reader who pressed pause stays paused. */
     let pausedByReader = calm;
+    /* A third: a preview is open. Nothing restarts the row under it. */
+    let previewOpen = false;
 
     const swiper = new Swiper(track, {
       modules: [Navigation, Keyboard, Autoplay, A11y],
@@ -246,11 +310,47 @@ const { id, title, lede, items, divider = false } = Astro.props;
        pays for and a reader never sees. */
     new IntersectionObserver(
       ([entry]) => {
-        if (pausedByReader) return;
+        if (pausedByReader || previewOpen) return;
         if (entry?.isIntersecting) swiper.autoplay.start();
         else swiper.autoplay.stop();
       },
       { threshold: 0.2 },
     ).observe(section);
+
+    /* The previews. One listener on the section rather than one per card:
+       Swiper's loop moves slides around the track, and a delegated listener
+       does not care where they went. A click Swiper read as the end of a drag
+       never gets here — it stops it first — so swiping a card does not open
+       it. */
+    section.addEventListener('click', (event) => {
+      const opener = (event.target as Element).closest<HTMLElement>('[data-feature-open]');
+      const dialog = opener && document.getElementById(opener.dataset.featureOpen ?? '');
+      if (!(dialog instanceof HTMLDialogElement)) return;
+
+      previewOpen = true;
+      swiper.autoplay.stop();
+      /* The arrow keys belong to the dialog while it is open, not to the row
+         behind it. */
+      swiper.keyboard.disable();
+      dialog.showModal();
+    });
+
+    for (const dialog of section.querySelectorAll<HTMLDialogElement>('[data-feature-preview]')) {
+      dialog.querySelector('[data-feature-close]')?.addEventListener('click', () => dialog.close());
+
+      /* A click on the backdrop lands on the dialog itself; one on the panel
+         lands on something inside it. */
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+
+      /* `close` fires however it closed — the button, the backdrop or Esc —
+         so this is the one place the carousel is given back. */
+      dialog.addEventListener('close', () => {
+        previewOpen = false;
+        swiper.keyboard.enable();
+        if (!pausedByReader) swiper.autoplay.start();
+      });
+    }
   }
 </script>

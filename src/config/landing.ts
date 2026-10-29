@@ -10,6 +10,7 @@
  *     time or a memory ceiling quoted before that is a number somebody made
  *     up, and it is the first thing a sceptical reader checks.
  */
+import { screenshots } from './screenshots';
 
 export const hero = {
   /**
@@ -29,19 +30,50 @@ export const hero = {
 
 export type Tone = 'primary' | 'secondary' | 'tertiary' | 'error';
 
+/** What a card's preview shows: a capture, and what is on it. */
+export interface Preview {
+  image: ImageMetadata;
+  /** Describes the screen for anyone who cannot see it. Never "screenshot of…". */
+  alt: string;
+}
+
 export interface Highlight {
+  /** The preview dialog's id is built from it, so it has to be unique. */
+  id: string;
   icon: string;
   title: string;
   /**
    * What the card says, as short lines rather than a paragraph — a card is
    * scanned, not read. **Four at most**: the carousel gives every card the
-   * height of the tallest one, so a fifth line here makes a dozen other cards
+   * height of the tallest one, so a fifth line here makes every other card
    * taller to carry it.
    */
   points: string[];
+  /** The one line under the capture when the card is opened. */
+  summary: string;
+  /**
+   * The capture the card opens on. `null` is a real answer — no capture yet —
+   * and the preview draws a neutral placeholder for it rather than borrowing a
+   * screen that shows something else.
+   */
+  screenshot: Preview | null;
   /** Which accent the card's icon, title and border take. */
   tone: Tone;
 }
+
+/**
+ * One of the captures under the hero, reused as a card's preview.
+ *
+ * Read out of `screenshots.ts` rather than imported a second time, so the alt
+ * text is written once; and it throws rather than returning nothing, so a
+ * renamed capture fails the build instead of quietly turning into a
+ * placeholder.
+ */
+const capture = (id: string): Preview => {
+  const shot = screenshots.find((s) => s.id === id);
+  if (!shot) throw new Error(`landing.ts: no screenshot "${id}" in screenshots.ts`);
+  return { image: shot.image, alt: shot.alt };
+};
 
 export const highlightsIntro = {
   title: 'Built for people who run the cluster',
@@ -51,26 +83,37 @@ export const highlightsIntro = {
 /**
  * The console's own features, as the carousel shows them.
  *
- * Fourteen rather than four, and the order is the reading order: what the
- * console *is* first — with the assistant among them, because it is the card a
- * visitor who has seen every other console has not seen — then what it does,
- * grouped so that neighbours in the row belong together.
+ * Nine rather than fourteen, and the order is the reading order: what the
+ * console *is* first — with the assistant second, because it is the card a
+ * visitor who has seen every other console has not seen — then what it adds
+ * and where it runs, then what it does all day. Fourteen was a row nobody
+ * scrolled to the end of; the smaller cards folded into the last one.
+ *
+ * Every card opens a preview: its `screenshot` above its `summary`. **To give a
+ * card a real capture**, put the PNG in `src/assets/screenshots/`, import it
+ * here and set `screenshot: { image, alt }` on that card — nothing else
+ * changes. A card left at `null` shows the placeholder, which says so.
  *
  * The rule at the top of this file applies to every one of them: each card is a
  * claim the console makes good on. Nothing here describes a page that is not in
  * the console, and nothing here describes a deployment shape the visitor cannot
- * reach — those belong to the profiles section, which says which is which.
+ * reach — those belong to the profiles section, which says which is which. The
+ * lines that look ahead, on the extras and EKS cards, say so in their own words.
  */
 export const highlights: Highlight[] = [
   {
-    icon: 'lucide:shield',
-    title: 'Air-gapped by default',
-    tone: 'primary',
+    id: 'multi-cluster',
+    icon: 'lucide:layers',
+    title: 'Multi-cluster view',
+    tone: 'secondary',
     points: [
-      'Your kubeconfig, read where it lives',
-      'No cloud proxy in the path',
-      'No account, no telemetry',
+      'Every context in your kubeconfig, side by side',
+      'KUBECONFIG merged as kubectl merges it',
+      'Switch without losing your place',
+      'Per-context credentials, isolated',
     ],
+    summary: 'Every cluster your kubeconfig names, in one process and one window.',
+    screenshot: capture('overview'),
   },
   {
     /**
@@ -87,9 +130,14 @@ export const highlights: Highlight[] = [
      * to `text-tertiary` — which is a second breach, since the trademark
      * guidelines forbid altering the mark. **Shipping the glyph is not a
      * licence to use it.**
+     *
+     * The preview is held to the same rule: the dialog is labelled by the
+     * title, so the name stays out of `summary` too, and a capture of this
+     * card must not put the mark where it reads as ours.
      */
+    id: 'assistant',
     icon: 'lucide:sparkles',
-    title: 'The assistant, already on the cluster',
+    title: 'AI assistant integrated',
     tone: 'tertiary',
     points: [
       'The ordinary terminal, running Claude Code',
@@ -97,133 +145,111 @@ export const highlights: Highlight[] = [
       'Your own subscription',
       'No API key in this project',
     ],
+    summary: 'An assistant in the terminal, already pointed at the cluster on screen.',
+    screenshot: null,
   },
   {
-    icon: 'lucide:layers',
-    title: 'Every context, one process',
+    id: 'air-gapped',
+    icon: 'lucide:shield',
+    title: 'Air-gapped by default',
+    tone: 'primary',
+    points: [
+      'Your kubeconfig, read where it lives',
+      'No cloud proxy in the path',
+      'No account, no telemetry',
+      'The browser never touches the API server',
+    ],
+    summary: 'Nothing phones home, and only the backend ever speaks to a cluster.',
+    screenshot: null,
+  },
+  {
+    /**
+     * Four of the six ship in the console today: Argo CD (which also reads
+     * Flux), KubeCron, KubeAdjust and the Redis viewer. Security and Database
+     * are named as coming, on a line of their own, so the card never reads as
+     * six pages a visitor can open today. When either ships, it moves up.
+     */
+    id: 'extras',
+    icon: 'lucide:puzzle',
+    title: 'Extras',
     tone: 'secondary',
     points: [
-      'Managed and local clusters side by side',
-      'Switch without losing your place',
-      'Per-context credentials, isolated',
-      'KUBECONFIG merged as kubectl merges it',
+      'Argo CD and Flux, KubeCron, KubeAdjust',
+      'A read-only Redis viewer',
+      'Security and Database, next',
+      'Many more to come',
     ],
+    summary: 'Pages for what only some clusters run, switched on per cluster.',
+    screenshot: null,
   },
   {
+    id: 'eks',
     icon: 'lucide:cloud',
-    title: 'EKS, AKS and GKE, already authenticated',
+    title: 'EKS and AWS CLI compatible',
     tone: 'primary',
     points: [
-      'The exec plugin your kubeconfig names',
-      'Found even when launched from the Dock',
       'EKS tokens signed in this process',
-      'SSO and assume-role, as your CLI resolves them',
+      'SSO and assume-role, as your AWS CLI resolves them',
+      'Profiles from SSO tools such as Leapp',
+      'More tooling to come',
     ],
+    summary: 'The AWS profiles you already use, with no second login.',
+    screenshot: null,
   },
   {
+    id: 'in-cluster',
     icon: 'lucide:server',
-    title: 'The browser never touches the API server',
+    title: 'In-cluster mode',
     tone: 'tertiary',
     points: [
-      'The Go backend is the only client',
-      'No cluster credential in the page',
-      'No generic proxy to a control plane',
-      'One place to audit',
+      'The console in a pod, from a Helm chart',
+      'Single sign-on through your OIDC provider',
+      'Each person held to your RBAC',
+      'A ClusterRole drawn from what it asks for',
     ],
+    summary: 'The same console deployed with Helm, signing people in through your identity provider.',
+    screenshot: null,
   },
   {
-    icon: 'lucide:link',
-    title: 'A view is a link',
-    tone: 'secondary',
-    points: [
-      'Several namespaces at once',
-      'The selection lives in the URL',
-      'Bookmark it, or send it',
-    ],
-  },
-  {
-    icon: 'lucide:columns-3',
-    title: 'Tables you arrange',
-    tone: 'tertiary',
-    points: [
-      'Column order, width and density',
-      'Per kind',
-      'Remembered across restarts',
-    ],
-  },
-  {
-    icon: 'lucide:tags',
-    title: 'A rail you can read at a glance',
-    tone: 'primary',
-    points: [
-      'Your own name for each context',
-      'A colour off a fixed palette',
-      'Grouped into bars',
-      'ARNs stop looking alike',
-    ],
-  },
-  {
-    icon: 'lucide:stethoscope',
-    title: 'Which cluster is broken, and whose problem',
-    tone: 'secondary',
-    points: [
-      'DNS, SSO, IAM, or the cluster itself',
-      'Four failures under one message',
-      'It says which one',
-      'So it says who fixes it',
-    ],
-  },
-  {
+    id: 'shells',
     icon: 'lucide:square-terminal',
-    title: 'A prompt already on the cluster',
-    tone: 'tertiary',
-    points: [
-      'kubectl and helm, already configured',
-      'Exec into a container',
-      'A shell on a node',
-      'A dock that survives navigation',
-    ],
-  },
-  {
-    icon: 'lucide:arrow-left-right',
-    title: 'Port-forward where the port is written',
-    tone: 'primary',
-    points: [
-      'Open it from the object you are reading',
-      'See everything that is open',
-      'Close it from the same place',
-    ],
-  },
-  {
-    icon: 'lucide:scroll-text',
-    title: 'Logs that page backwards',
+    title: 'Multi-shell integration',
     tone: 'secondary',
     points: [
-      'The log API has no cursor',
-      'The console pages it for you',
-      'ANSI and JSON, rendered',
-      'Per container',
+      'A terminal already on the right context',
+      'A shell in any pod',
+      'A shell on a node',
+      'Pod logs that page backwards',
     ],
+    summary: 'A prompt on the context, the pod or the node you are reading, and its logs beside it.',
+    screenshot: capture('pods'),
   },
   {
-    icon: 'lucide:activity',
-    title: 'CPU and memory in the table',
-    tone: 'tertiary',
-    points: [
-      'Live columns wherever metrics exist',
-      'Per container in the drawer',
-      'metrics-server, or Prometheus',
-    ],
-  },
-  {
+    id: 'helm',
     icon: 'lucide:package',
-    title: 'Helm releases, first class',
+    title: 'Helm release integration',
     tone: 'primary',
     points: [
-      'Releases and their values',
-      'The manifest they produced',
-      'Their history',
-      'In the console, not beside it',
+      'Every release, at its chart version',
+      'The values you supplied, and its notes',
+      'Every revision it kept, newest first',
+      'One click from the list',
     ],
+    summary: 'Every detail of a Helm release, one click from the list.',
+    screenshot: null,
+  },
+  {
+    id: 'ui',
+    icon: 'lucide:panels-top-left',
+    title: 'Intuitive, modern UI',
+    tone: 'tertiary',
+    points: [
+      'Tables you arrange, remembered',
+      'A view is a link you can send',
+      'Your own name and colour per context',
+      'CPU and memory in the table',
+    ],
+    summary: 'A console you arrange once and find the way you left it.',
+    screenshot: capture('overview'),
   },
 ];
