@@ -36,8 +36,24 @@ kubetower --reset-password
 ```
 
 This creates a new password, shows it once, and signs everyone out once you
-restart kubetower (unless you set `KT_SESSION_SECRET`). It does nothing if you set `KT_PASSWORD_HASH`: change the
-hash instead.
+restart kubetower (unless you set `KT_SESSION_SECRET`).
+
+If you set `KT_PASSWORD_HASH`, kubetower refuses the reset and changes nothing.
+It signs in with that hash, so a new password would never be asked for. It
+says:
+
+> KT_PASSWORD_HASH is set, so the console signs in with that hash and never
+> reads credentials.json: a password drawn now would never be asked for, and
+> nothing was changed. Change the hash where it is set […], or unset it to go
+> back to a drawn password
+
+You have two ways out:
+
+- **Keep a hash**: set `KT_PASSWORD_HASH` to the bcrypt hash of a new password
+  where you set it, then restart kubetower (see
+  [Set the password in advance](/docs/container#set-the-password-in-advance)).
+- **Go back to a created password**: unset `KT_PASSWORD_HASH`, then run
+  `kubetower --reset-password` again.
 
 ## Nothing appears when I start it
 
