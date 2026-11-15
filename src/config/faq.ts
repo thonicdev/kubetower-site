@@ -28,7 +28,7 @@ export const faq: FaqItem[] = [
     question: 'Is it really free?',
     // The licence is named in `project.ts` and nowhere else — three copies of
     // a licence name is how a site ends up claiming two different ones.
-    answer: `Yes. The core application (multi-cluster, logs, 7-day archive, desktop app) is 100% free and open source (${project.license}).`,
+    answer: `Yes. Everything, every extra included, is free and open source (${project.license}). There is no paid tier, no account and no licence key.`,
   },
   {
     question: 'Does anything leave my machine?',

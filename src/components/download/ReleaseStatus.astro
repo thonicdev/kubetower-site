@@ -36,6 +36,16 @@ import { VERSION_TOKEN } from '~/config/downloads';
   <span class="text-on-surface-variant">Released <span data-release-date></span></span>
 </div>
 
+<!-- Shown until GitHub names a public release, and so whenever it cannot:
+     without it the page reads as broken, with platform panels and no buttons. -->
+<p
+  data-release-pending
+  class="mx-auto mt-6 inline-flex max-w-xl items-center gap-2 rounded-full border border-warning/40 bg-surface-container px-3.5 py-1.5 text-xs text-on-surface shadow-sm"
+>
+  <span class="h-2 w-2 rounded-full bg-warning"></span>
+  <span><span class="font-medium text-warning">Coming soon.</span> No public release yet: the downloads appear here the day it is out.</span>
+</p>
+
 <script>
   const CACHE_KEY = 'kubetower:release';
   const TTL_MS = 60 * 60 * 1000;
@@ -113,6 +123,9 @@ import { VERSION_TOKEN } from '~/config/downloads';
         node.hidden = false;
       }
       root.hidden = false;
+      for (const node of document.querySelectorAll<HTMLElement>('[data-release-pending]')) {
+        node.hidden = true;
+      }
 
       for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-release-asset]')) {
         const asset = swap(link.dataset.releaseAsset ?? '');

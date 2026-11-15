@@ -1,5 +1,6 @@
 import overview from '~/assets/screenshots/overview.png';
-import pods from '~/assets/screenshots/pods.png';
+import drawer from '~/assets/screenshots/drawer.png';
+import logs from '~/assets/screenshots/logs.png';
 
 export interface Screenshot {
   id: string;
@@ -20,13 +21,19 @@ export const screenshots: Screenshot[] = [
   {
     id: 'overview',
     title: 'Cluster overview',
-    alt: 'A cluster overview: CPU, memory and pod requests as ring gauges, a workload phase bar, and per-kind counts for deployments, statefulsets, daemonsets, jobs, cronjobs and pods.',
+    alt: 'A cluster overview: CPU, memory and pod requests as ring gauges, CPU and memory used over time, and the workloads by phase with deployments, statefulsets, daemonsets, jobs, cronjobs and pods counted.',
     image: overview,
   },
   {
-    id: 'pods',
-    title: 'Pods',
-    alt: 'A pod list spanning namespaces, with readiness, status, restart count, CPU, memory, container count, node, QoS class and age columns, including pods in Error, ImagePullBackOff and Pending states.',
-    image: pods,
+    id: 'drawer',
+    title: 'Deployment details',
+    alt: "A deployment list with one deployment's drawer open beside it: its summary, image, rollout strategy and conditions, labels, and the pods and config map it is related to.",
+    image: drawer,
+  },
+  {
+    id: 'logs',
+    title: 'Pod logs',
+    alt: "A pod list with the dock open below it, following one pod's logs line by line.",
+    image: logs,
   },
 ];
