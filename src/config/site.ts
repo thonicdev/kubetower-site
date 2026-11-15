@@ -9,9 +9,9 @@ export const site = {
   name: 'kubetower',
   /** Used in <title> after the page name. */
   titleSuffix: 'kubetower',
-  tagline: 'The free and open source multi-cluster Kubernetes UI.',
+  tagline: 'The free, open-source Kubernetes console. A Lens alternative.',
   description:
-    'An air-gapped multi-cluster Kubernetes console. One Go binary serves its own interface and is the only thing that talks to your clusters, using the kubeconfig already on your machine.',
+    'A free, open-source (AGPL-3.0) multi-cluster Kubernetes console and Lens alternative. One Go binary serves its own interface and is the only thing that talks to your clusters, using the kubeconfig already on your machine.',
 } as const;
 
 export interface NavLink {

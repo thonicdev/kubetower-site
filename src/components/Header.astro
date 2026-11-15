@@ -2,6 +2,7 @@
 import GitHubStars from './GitHubStars.astro';
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
+import { project } from '~/config/project';
 import { primaryNav } from '~/config/site';
 import { withBase, isWithin } from '~/lib/paths';
 
@@ -54,7 +55,7 @@ const pathname = Astro.url.pathname;
     </nav>
 
     <div class="col-start-3 flex items-center gap-2 justify-self-end">
-      <GitHubStars />
+      {project.repoPublic && <GitHubStars />}
 
       <button
         type="button"

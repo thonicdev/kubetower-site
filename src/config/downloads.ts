@@ -91,7 +91,7 @@ export const isVersionLine = (line: CommandSegment[]) => line.some((segment) => 
 export const downloadIntro = {
   titleLead: 'Get',
   titleAccent: 'kubetower',
-  lede: 'Native multi-cluster console for your workstation or cluster. Single binary, no daemon, instant boot.',
+  lede: 'The free, open-source multi-cluster console, for your workstation or your cluster. Single binary, no daemon, no account.',
 } as const;
 
 const macosNotice: UnsignedNotice = {

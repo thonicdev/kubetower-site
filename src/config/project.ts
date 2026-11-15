@@ -2,15 +2,16 @@
  * Where the console lives, and whether a visitor can get there.
  */
 export const project = {
-  /** The console's repository. Opens to the public with v0. */
+  /** The console's repository. Opens to the public with the first public release (0.2). */
   repoUrl: 'https://github.com/thonicdev/kubetower',
 
   /**
    * Whether the console's repository can be opened by a visitor. It governs
-   * the footer's links into it; the header's star button is unconditional and
-   * degrades on its own when the API cannot answer.
+   * the hero's GitHub button, the header's star button and the footer's links
+   * into it: while it is private every one of them is a 404 for a visitor.
+   * Set it to true the day the repository opens.
    */
-  repoPublic: true,
+  repoPublic: false,
 
   /** The site's own repository, which is public and can always be linked. */
   siteRepoUrl: 'https://github.com/thonicdev/kubetower-site',

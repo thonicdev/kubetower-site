@@ -19,6 +19,7 @@ import inCluster from '~/assets/screenshots/in-cluster.png';
 import podShell from '~/assets/screenshots/pod-shell.png';
 import podsArranged from '~/assets/screenshots/pods-arranged.png';
 import reachability from '~/assets/screenshots/reachability.png';
+import { project } from './project';
 
 export const hero = {
   /**
@@ -31,9 +32,13 @@ export const hero = {
    * below `sm`, so the break is one we chose; above `sm` they read as one
    * line again and nothing changes.
    */
-  titleLead: ['Open-source', 'multi-cluster'],
-  titleAccent: 'Kubernetes console.',
-  lede: 'Native performance for DevOps and SREs. All your contexts in one fluid UI, powered by a 42MB binary. No bloat, no configuration required.',
+  titleLead: ['The free', 'Kubernetes console.'],
+  titleAccent: 'A Lens alternative.',
+  /** The pill above the headline: the three facts a visitor checks first. */
+  eyebrow: ['Free', `Open source, ${project.license}`, 'No account'],
+  lede: 'Every cluster in your kubeconfig in one window, from a single binary on your machine or a Helm chart in your cluster. No paid tier, no telemetry, nothing to sign up for.',
+  /** Said where the download button would be, until a release is public. */
+  releaseNote: 'First public release coming soon',
 } as const;
 
 export type Tone = 'primary' | 'secondary' | 'tertiary' | 'error';
@@ -173,20 +178,19 @@ export const highlights: Highlight[] = [
   },
   {
     /**
-     * Four of the six ship in the console today: Argo CD (which also reads
-     * Flux), KubeCron, KubeAdjust and the Redis viewer. Security and Database
-     * are named as coming, on a line of their own, so the card never reads as
-     * six pages a visitor can open today. When either ships, it moves up.
+     * Ten extras ship in the console today (the README of thonicdev/kubetower
+     * lists them, and the Extras section below shows each one). The Database
+     * viewer is the one named as next, on a line of its own.
      */
     id: 'extras',
     icon: 'lucide:puzzle',
     title: 'Extras',
     tone: 'secondary',
     points: [
-      'Argo CD and Flux, KubeCron, KubeAdjust',
-      'A read-only Redis viewer',
-      'Security and Database, next',
-      'Many more to come',
+      'Argo CD and Flux, Cert Manager, Postgres',
+      'JVM, network policies, pending pods',
+      'Right-sizing, CronJobs, Redis, Trivy',
+      'A Database viewer, next',
     ],
     summary: 'Pages for what only some clusters run, switched on per cluster.',
     screenshot: {

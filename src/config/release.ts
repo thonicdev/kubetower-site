@@ -3,9 +3,9 @@ import { project } from './project';
 /**
  * The strip under the hero's buttons.
  *
- * The two figures are the targets the build is held to, not numbers read off a
- * released binary — there is no released binary yet. Replace them with measured
- * ones at v0, and keep the measurement rather than the estimate.
+ * Facts a visitor can check, never a measured figure: there is no public build
+ * to measure yet. A startup time or a memory figure comes back here only once
+ * it has been measured on a released binary, with the measurement kept.
  */
 export interface Spec {
   label: string;
@@ -17,7 +17,7 @@ export interface Spec {
 }
 
 export const specs: Spec[] = [
-  { label: 'Startup', value: '< 14ms', tone: 'primary', pulse: true },
-  { label: 'Memory', value: '~42 MB', tone: 'tertiary' },
+  { label: 'Price', value: 'Free, no paid tier', tone: 'primary', pulse: true },
+  { label: 'Telemetry', value: 'None', tone: 'tertiary' },
   { label: 'License', value: project.license, tone: 'neutral' },
 ];
