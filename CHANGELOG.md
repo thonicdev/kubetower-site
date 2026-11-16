@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/thonicdev/kubetower-site/compare/v0.1.0...v0.2.0) (2026-11-16)
+
+
+### Features
+
+* **home:** sell the console as free, open source and a lens alternative ([#29](https://github.com/thonicdev/kubetower-site/issues/29)) ([f243a22](https://github.com/thonicdev/kubetower-site/commit/f243a220c019eac5c1a5f4b5d7f479684736db07))
+
 ## 0.1.0 (2026-10-29)
 
 
