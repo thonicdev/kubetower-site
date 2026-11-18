@@ -162,7 +162,7 @@ export const highlights: Highlight[] = [
   {
     id: 'air-gapped',
     icon: 'lucide:shield',
-    title: 'Air-gapped by default',
+    title: 'No cloud in the path',
     tone: 'primary',
     points: [
       'Your kubeconfig, read where it lives',
@@ -170,7 +170,7 @@ export const highlights: Highlight[] = [
       'No account, no telemetry',
       'The browser never touches the API server',
     ],
-    summary: 'Nothing phones home, and only the backend ever speaks to a cluster.',
+    summary: 'Only the backend speaks to a cluster, and its one call of its own is a daily check for a newer release.',
     screenshot: {
       image: reachability,
       alt: 'The Cluster page: each kubeconfig context with its Kubernetes version, metrics source and probe time, and one that could not be reached, with the dial error and who can fix it.',

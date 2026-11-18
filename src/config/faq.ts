@@ -33,7 +33,7 @@ export const faq: FaqItem[] = [
   {
     question: 'Does anything leave my machine?',
     answer:
-      'No. No accounts and no cloud proxies. The application talks directly to your Kubernetes API server and nothing else.',
+      'No account and no cloud proxy: the console talks directly to your Kubernetes API servers. The only call the desktop app makes on its own is a daily check with GitHub for a newer release, carrying nothing about you; KT_UPDATE_CHECK=off turns it off.',
   },
   {
     question: 'Does it install agents in my cluster?',
