@@ -1,0 +1,90 @@
+---
+/**
+ * The chart's version, for the Kubernetes command.
+ *
+ * The chart is versioned on its own: `--version` names a chart version, and
+ * each chart version installs the console named by its `appVersion`. The
+ * console's release number is therefore never the right `--version`.
+ *
+ * The visitor's browser asks GitHub for the chart repository's tags and takes
+ * the highest stable `kubetower-<x.y.z>`, compared as semver. The command and
+ * its copy button are shown only then; until GitHub names one - no chart
+ * published, a rate limit, no network - a single line says the chart is not
+ * published, rather than a command that fails.
+ */
+import { chartLinks } from '~/config/project';
+import { CHART_VERSION_TOKEN } from '~/config/downloads';
+---
+
+<div data-chart data-chart-api={chartLinks.tags} data-chart-prefix={chartLinks.tagPrefix} data-chart-token={CHART_VERSION_TOKEN} hidden></div>
+
+<script>
+  const CACHE_KEY = 'kubetower:chart';
+  const TTL_MS = 60 * 60 * 1000;
+
+  /** The highest stable `<prefix>x.y.z` among the tags, as x.y.z, or null. */
+  function pickLatest(tags: unknown[], prefix: string): string | null {
+    let best: number[] | null = null;
+    for (const entry of tags) {
+      const name = (entry as { name?: unknown })?.name;
+      if (typeof name !== 'string' || !name.startsWith(prefix)) continue;
+      const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(name.slice(prefix.length));
+      if (!match) continue;
+      const parts = match.slice(1, 4).map(Number);
+      if (!best || (parts[0] - best[0] || parts[1] - best[1] || parts[2] - best[2]) > 0) best = parts;
+    }
+    return best ? best.join('.') : null;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-chart]');
+
+  if (root) {
+    const endpoint = root.dataset.chartApi ?? '';
+    const prefix = root.dataset.chartPrefix ?? '';
+    const token = root.dataset.chartToken ?? '';
+
+    const apply = (version: string) => {
+      for (const node of document.querySelectorAll<HTMLElement>('[data-chart-version]')) {
+        node.textContent = version;
+      }
+      for (const button of document.querySelectorAll<HTMLElement>('[data-chart-copy]')) {
+        button.dataset.copy = (button.dataset.chartCopy ?? '').split(token).join(version);
+      }
+      for (const node of document.querySelectorAll<HTMLElement>('[data-chart-only]')) {
+        node.hidden = false;
+      }
+      for (const node of document.querySelectorAll<HTMLElement>('[data-chart-pending]')) {
+        node.hidden = true;
+      }
+    };
+
+    let cached: { version: string; at: number } | null = null;
+    try {
+      cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null');
+    } catch {
+      cached = null;
+    }
+
+    if (cached && typeof cached.version === 'string' && Date.now() - cached.at < TTL_MS) {
+      apply(cached.version);
+    } else {
+      fetch(endpoint, { headers: { Accept: 'application/vnd.github+json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+        .then((data: unknown) => {
+          if (!Array.isArray(data)) return;
+          const version = pickLatest(data, prefix);
+          if (!version) return;
+          apply(version);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ version, at: Date.now() }));
+          } catch {
+            /* Storage disabled: asked again on the next visit. */
+          }
+        })
+        .catch(() => {
+          /* Rate limit or no network: the command stays hidden, the line saying
+             the chart is not published stays. */
+        });
+    }
+  }
+</script>
