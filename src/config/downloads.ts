@@ -201,7 +201,7 @@ export const downloadPlatforms: DownloadPlatform[] = [
         id: 'exe',
         tag: 'EXE',
         title: 'Windows Setup (.exe)',
-        description: 'Standard Windows desktop installation wizard with auto-updating.',
+        description: 'Standard Windows installation wizard, for your user only, with a Start menu entry.',
         label: `kubetower-${version}-setup.exe`,
         asset: `kubetower-${version}-setup.exe`,
         size: '~56.4 MB',
