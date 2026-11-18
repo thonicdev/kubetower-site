@@ -17,6 +17,13 @@ export const project = {
   siteRepoUrl: 'https://github.com/thonicdev/kubetower-site',
 
   /**
+   * The Helm chart's repository, public. Each chart release is a tag
+   * `kubetower-<version>` there, pushed when that version is published to
+   * oci://ghcr.io/thonicdev/charts/kubetower.
+   */
+  chartRepoUrl: 'https://github.com/thonicdev/kubetower-helm-charts',
+
+  /**
    * The licence the console is published under, by its SPDX identifier.
    * Named in exactly one place: it appears in the spec strip, the FAQ and the
    * footer, and three copies of a licence name is how a site ends up claiming
@@ -32,4 +39,11 @@ export const repoLinks = {
   issues: `${project.repoUrl}/issues`,
   releases: `${project.repoUrl}/releases`,
   latest: `${project.repoUrl}/releases/latest`,
+} as const;
+
+export const chartLinks = {
+  /** The REST endpoint the chart's tags are read from. */
+  tags: `${project.chartRepoUrl.replace('https://github.com/', 'https://api.github.com/repos/')}/tags?per_page=100`,
+  /** The prefix of a chart release's tag, before its version. */
+  tagPrefix: 'kubetower-',
 } as const;

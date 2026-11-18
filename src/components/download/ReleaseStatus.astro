@@ -6,15 +6,16 @@
  * The page is built with no version in it. The visitor's browser asks GitHub
  * for the newest stable release — the highest plain x.y.z tag that is neither
  * a draft nor a prerelease, compared as semver rather than by date —
- * and rewrites the pill, the asset filenames and links, and the Helm command
- * to match. A new release therefore shows up without rebuilding the site.
+ * and rewrites the pill and the asset filenames and links to match. The Helm
+ * command is not among them: it names the chart's version, not the console's
+ * (ChartStatus.astro). A new release therefore shows up without rebuilding the site.
  *
  * Links point at releases/download/<tag>/ rather than releases/latest/: GitHub's
  * "latest" is whichever release was last marked so, which need not be the
  * highest semver, and the pill and the buttons must name the same release.
  *
- * Everything versioned — the pill, the download buttons and checksum links, the
- * Helm --version line — is hidden until GitHub has answered, and stays hidden
+ * Everything versioned — the pill, the download buttons and checksum links — is
+ * hidden until GitHub has answered, and stays hidden
  * if it does not (404 while the repository is private, 403 past 60 anonymous
  * requests an hour): no version is better than a made-up one.
  */
@@ -133,10 +134,6 @@ import { VERSION_TOKEN } from '~/config/downloads';
         const label = link.querySelector<HTMLElement>('[data-release-label]');
         if (label) label.textContent = swap(label.textContent ?? '');
       }
-
-      for (const button of document.querySelectorAll<HTMLElement>('[data-release-copy]')) {
-        button.dataset.copy = swap(button.dataset.releaseCopy ?? '');
-      }
     };
 
     let cached: (Latest & { at: number }) | null = null;
@@ -165,7 +162,7 @@ import { VERSION_TOKEN } from '~/config/downloads';
         })
         .catch(() => {
           /* Private repository, rate limit, or no network: the pill, the
-             download buttons and the Helm --version line stay hidden. */
+             download buttons and the checksum links stay hidden. */
         });
     }
   }

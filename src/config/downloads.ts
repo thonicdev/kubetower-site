@@ -8,6 +8,16 @@ import { repoLinks } from './project';
  */
 export const VERSION_TOKEN = '{version}';
 
+/**
+ * Stands for the Helm chart's version in the Kubernetes command. It is not the
+ * console's: the chart is versioned on its own (its Chart.yaml `version`), and
+ * each chart version names the console it installs as its `appVersion`. The
+ * download page asks GitHub for the chart repository's newest
+ * `kubetower-<x.y.z>` tag and substitutes it here; until there is one, the
+ * command is not shown (ChartStatus.astro).
+ */
+export const CHART_VERSION_TOKEN = '{chartVersion}';
+
 const version = VERSION_TOKEN;
 
 export interface Artifact {
@@ -30,8 +40,8 @@ export interface Artifact {
 export interface CommandSegment {
   text: string;
   tone?: 'primary' | 'warning' | 'tertiary';
-  /** The segment is the release version: its line is shown only once one is known. */
-  version?: boolean;
+  /** The segment is the chart's version, filled in once one is known. */
+  chartVersion?: boolean;
 }
 
 export interface DownloadPlatform {
@@ -85,8 +95,6 @@ export interface UnsignedNotice {
 /** The checksum file every release publishes. */
 export const checksumsAsset = 'checksums.txt';
 
-/** Whether a command line names the release version. */
-export const isVersionLine = (line: CommandSegment[]) => line.some((segment) => segment.version);
 
 export const downloadIntro = {
   titleLead: 'Get',
@@ -271,7 +279,7 @@ export const downloadPlatforms: DownloadPlatform[] = [
         { text: 'helm', tone: 'primary' },
         { text: ' install kubetower oci://ghcr.io/thonicdev/charts/kubetower \\' },
       ],
-      [{ text: '  --version ' }, { text: version, tone: 'warning', version: true }, { text: ' \\' }],
+      [{ text: '  --version ' }, { text: CHART_VERSION_TOKEN, tone: 'warning', chartVersion: true }, { text: ' \\' }],
       [{ text: '  --namespace ' }, { text: 'kubetower-system', tone: 'tertiary' }, { text: ' \\' }],
       [{ text: '  --create-namespace' }],
     ],
@@ -279,12 +287,12 @@ export const downloadPlatforms: DownloadPlatform[] = [
 ];
 
 /**
- * The command as one line, for the clipboard. Without the version, the lines
- * naming it are left out, which is what the page shows until one is known.
+ * The command as one line, for the clipboard, with CHART_VERSION_TOKEN where
+ * the chart's version goes: the page substitutes it before the command is
+ * shown, and does not show the command without it.
  */
-export function commandLine(platform: DownloadPlatform, withVersion: boolean): string {
+export function commandLine(platform: DownloadPlatform): string {
   return (platform.command ?? [])
-    .filter((line) => withVersion || !isVersionLine(line))
     .map((line) => line.map((segment) => segment.text).join(''))
     .map((line) => line.replace(/\s*\\$/, ''))
     .join(' ')

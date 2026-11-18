@@ -13,13 +13,13 @@ import { repoLinks } from '~/config/project';
 import {
   checksumsAsset,
   commandLine,
-  isVersionLine,
   downloadPlatforms,
   type Artifact,
   type CommandSegment,
   type DownloadPlatform,
 } from '~/config/downloads';
 import { withBase } from '~/lib/paths';
+import ChartStatus from './ChartStatus.astro';
 
 const columns: Record<number, string> = {
   2: 'md:grid-cols-2 gap-5',
@@ -170,7 +170,14 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
         )}
 
         {platform.command && (
-          <div class="mt-6">
+          <p data-chart-pending class="mt-6 flex items-center gap-2 text-sm text-on-surface-variant">
+            <span class="h-2 w-2 rounded-full bg-warning" />
+            <span>Helm chart: not published yet</span>
+          </p>
+        )}
+
+        {platform.command && (
+          <div class="mt-6" data-chart-only hidden>
             <div class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-inner">
               <!-- Terminal header bar -->
               <div class="flex items-center justify-between border-b border-outline-variant/60 bg-surface-container-high px-4 py-2.5">
@@ -181,8 +188,7 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
                 </span>
                 <button
                   type="button"
-                  data-copy={commandLine(platform, false)}
-                  data-release-copy={commandLine(platform, true)}
+                  data-chart-copy={commandLine(platform)}
                   class="flex cursor-pointer items-center gap-1.5 text-xs text-on-surface-variant transition-colors hover:text-primary"
                 >
                   <Icon name="lucide:copy" size={14} data-copy-icon />
@@ -193,9 +199,9 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
 
               <!-- Code content -->
               <pre class="overflow-x-auto p-5 font-mono text-xs leading-relaxed text-on-surface select-all sm:text-sm"><code><span class="text-on-surface-variant select-none">$ </span>{platform.command.map((line, lineIndex) => (
-                <span data-release-only={isVersionLine(line) ? '' : undefined} hidden={isVersionLine(line)}>{[
+                <span>{[
                   ...line.map((segment) => (
-                    <span class={segment.tone ? segmentTone[segment.tone] : undefined} data-release-version={segment.version ? '' : undefined}>{segment.text}</span>
+                    <span class={segment.tone ? segmentTone[segment.tone] : undefined} data-chart-version={segment.chartVersion ? '' : undefined}>{segment.text}</span>
                   )),
                   lineIndex < platform.command!.length - 1 ? '\n' : '',
                 ]}</span>
@@ -267,3 +273,5 @@ const tabId = (platform: DownloadPlatform) => `tab-${platform.id}`;
     }
   }
 </script>
+
+<ChartStatus />
