@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/thonicdev/kubetower-site/compare/v0.2.0...v0.2.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **content:** say what the console sends on its own ([#32](https://github.com/thonicdev/kubetower-site/issues/32)) ([4c69491](https://github.com/thonicdev/kubetower-site/commit/4c69491244f5687fe41dd3bff13b86fb4af159dd))
+* **download:** give the helm command the chart's own version ([#31](https://github.com/thonicdev/kubetower-site/issues/31)) ([0ea4f8c](https://github.com/thonicdev/kubetower-site/commit/0ea4f8c0d43d85a4af08c146c9dab9d633286eb0))
+
 ## [0.2.0](https://github.com/thonicdev/kubetower-site/compare/v0.1.0...v0.2.0) (2026-11-16)
 
 
