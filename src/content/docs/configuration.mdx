@@ -1,0 +1,73 @@
+---
+title: Configuration
+description: The environment variables worth knowing, with their defaults.
+order: 6
+---
+
+Settings are environment variables, most of them starting with `KT_`. Archive
+and node shell settings changed on the **Settings** page win over them. The
+full list, with comments, is
+[`.env.example`](https://github.com/thonicdev/kubetower/blob/main/.env.example).
+
+## Sign-in
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KT_USER` | `admin` | Login name |
+| `KT_PASSWORD_HASH` | *(created on first run)* | bcrypt hash of the password |
+| `KT_SESSION_TTL` | `720h` | Signs you out after this long unused |
+| `KT_SESSION_MAX` | `2160h` | Signs you out after this long, used or not |
+| `KT_SESSION_SECRET` | *(stored in `credentials.json`)* | Session key, 32 characters or more. Change it to sign everyone out |
+
+There is no way to run without signing in.
+
+## Network
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KT_LISTEN` | `127.0.0.1:5823` | Address and port |
+| `KT_FORWARD_PORTS` | *(any free port)* | Port range for port-forwards in a container, e.g. `30000-30031`. Leave unset on your machine |
+
+## Clusters
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KUBECONFIG` | `~/.kube/config` | Your clusters. Several files are merged, like `kubectl` |
+| `KT_READONLY_CLUSTERS` | *(none)* | Clusters where changes are blocked, comma-separated |
+| `KT_NODE_SHELL_IMAGE` | `alpine:3.24` | Image used by node shells |
+| `KT_AWS_EXEC` | *(off)* | Use `aws eks get-token` for EKS |
+
+`KT_READONLY_CLUSTERS` protects you from mistakes. It is not a security
+boundary: for that, use a read-only account in your kubeconfig.
+
+## Data
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KT_STATE_DIR` | `~/.kubetower` | Where kubetower writes |
+| `KT_ARCHIVE` | on | Keep recent cluster events |
+| `KT_ARCHIVE_LOGS` | off | Also keep pod logs |
+| `KT_ARCHIVE_RETENTION_DAYS` | `7` | Days kept (1 to 90) |
+
+Pod logs may contain secrets. Think twice before turning `KT_ARCHIVE_LOGS` on.
+
+## Claude assistant
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KT_CLAUDE_READONLY` | `true` | Block commands that change the cluster |
+| `KT_CLAUDE_PERMISSION_MODE` | `auto` | `auto`, `acceptEdits`, `dontAsk`, `manual` or `plan` |
+
+## Other
+
+| Variable | Default | What |
+| --- | --- | --- |
+| `KT_UPDATE_CHECK` | on | Check GitHub for a new version once a day |
+| `KT_DIAG` | on | Print a short report about the machine at start |
+
+## Health checks
+
+| Path | Answers |
+| --- | --- |
+| `/healthz` | The process is running |
+| `/readyz` | The kubeconfig reads and at least one cluster answers (ready while the first check runs) |

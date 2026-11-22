@@ -1,0 +1,57 @@
+---
+title: Getting started
+description: What kubetower is, and the shortest path to a console open on your clusters.
+order: 1
+---
+
+kubetower is a Kubernetes console in a single binary. Start it, open your
+browser, and it shows every cluster in your kubeconfig.
+
+## What you need
+
+- **A kubeconfig**, the same file `kubectl` uses.
+- **A browser.**
+
+No database, no agent in the cluster, no account to create.
+
+## Where it can run
+
+| | Good for | Page |
+| --- | --- | --- |
+| **On your machine** | One person, several clusters | [Install](/docs/install) |
+| **In a container** | Nothing installed on the host | [Run in a container](/docs/container) |
+| **In a cluster** | One console shared by a team | [Run in a cluster](/docs/helm) |
+
+## Quick start
+
+There is no release yet, so build it from source. You need Go, Node 24 and
+pnpm.
+
+```bash
+git clone https://github.com/thonicdev/kubetower
+cd kubetower
+pnpm -C web install --frozen-lockfile
+pnpm -C web build
+go build -trimpath -o kubetower ./cmd/kubetower
+./kubetower
+```
+
+Build the interface **before** the binary, or the binary shows a "UI not built"
+page.
+
+## First sign-in
+
+1. On the first start, kubetower creates a password and shows it **once**: in
+   the terminal and in `~/.kubetower/PASSWORD-ONCE.txt` (and in a dialog on
+   Windows).
+2. Open **http://127.0.0.1:5823**.
+3. Sign in as `admin` with that password.
+
+The file is deleted after your first sign-in. Lost the password? Run
+`kubetower --reset-password` to get a new one.
+
+## Next
+
+- [Using the console](/docs/using): clusters, lists, logs, shells.
+- [Configuration](/docs/configuration): the settings you can change.
+- [Troubleshooting](/docs/troubleshooting): when something does not work.

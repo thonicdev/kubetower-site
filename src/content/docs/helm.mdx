@@ -1,0 +1,69 @@
+---
+title: Run in a cluster
+description: One console for a whole team, inside the cluster, with single sign-on and your own RBAC.
+order: 5
+---
+
+import CommandRow from '~/components/ui/CommandRow.astro';
+
+<CommandRow command={null} placeholder="Helm chart: not published yet" />
+
+The Helm chart is not published yet. Its source is in
+[kubetower-helm-charts](https://github.com/thonicdev/kubetower-helm-charts).
+The in-cluster mode itself exists: this page describes it, so you can prepare.
+
+## How it works
+
+Start the binary with `--incluster`. The console then:
+
+- manages **only the cluster it runs in**, using its own ServiceAccount;
+- lets people **sign in with your identity provider** (OIDC);
+- **checks your RBAC** before every read, change, shell or secret reveal.
+
+Local shells, node shells, port-forwards and the Claude assistant are turned off
+in this mode.
+
+## Single sign-on
+
+| Variable | Value |
+| --- | --- |
+| `KT_OIDC_ISSUER` | Your provider's URL |
+| `KT_OIDC_CLIENT_ID` | The client registered at the provider |
+| `KT_OIDC_CLIENT_SECRET` | Its secret (optional) |
+| `KT_OIDC_REDIRECT_URL` | `https://<your-host>/api/auth/oidc/callback` |
+
+Everyone your provider accepts can sign in, so **restrict access at the
+provider**.
+
+Once SSO is on, the shared password is disabled. `KT_AUTH_LOCAL_ACCOUNT=true`
+keeps it.
+
+## Permissions
+
+You grant access with ordinary `Role` and `RoleBinding` objects. Before each
+action, the console asks Kubernetes: *may this person do this?*
+
+To check what someone can do:
+
+```bash
+kubectl auth can-i delete pods --as alice@example.com --as-group <group>
+```
+
+For these checks, the ServiceAccount needs `create` on `subjectaccessreviews`.
+It never needs `impersonate`.
+
+**Reading is checked too.** A list shows only the namespaces a person may list,
+and says when it was narrowed. A permission change can take up to a minute to
+apply.
+
+## What to deploy
+
+| | |
+| --- | --- |
+| Image | Built from the repository's `Dockerfile` |
+| Port | `5823` |
+| Volume | `/var/lib/kubetower` |
+| Liveness probe | `GET /healthz` |
+| Readiness probe | `GET /readyz` |
+
+Put it behind an ingress with TLS.

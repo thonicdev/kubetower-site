@@ -1,0 +1,28 @@
+---
+import { render } from 'astro:content';
+import DocsLayout from '~/layouts/DocsLayout.astro';
+import { getOrderedDocs, type DocEntry } from '~/lib/docs';
+import { mdxComponents } from '~/components/mdx';
+
+export async function getStaticPaths() {
+  const docs = await getOrderedDocs();
+
+  // `index` becomes /docs itself: a rest parameter left undefined renders the
+  // section root, so the overview does not need a page of its own.
+  return docs.map((entry) => ({
+    params: { slug: entry.id === 'index' ? undefined : entry.id },
+    props: { entry },
+  }));
+}
+
+interface Props {
+  entry: DocEntry;
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+---
+
+<DocsLayout {entry} {headings}>
+  <Content components={mdxComponents} />
+</DocsLayout>

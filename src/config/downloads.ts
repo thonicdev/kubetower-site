@@ -1,0 +1,301 @@
+import { repoLinks } from './project';
+
+/**
+ * Stands for the release version wherever one appears. The site carries no
+ * version of its own: the download page asks GitHub for the newest stable
+ * release in the visitor's browser and substitutes it here, and shows nothing
+ * versioned when GitHub does not answer (ReleaseStatus.astro).
+ */
+export const VERSION_TOKEN = '{version}';
+
+/**
+ * Stands for the Helm chart's version in the Kubernetes command. It is not the
+ * console's: the chart is versioned on its own (its Chart.yaml `version`), and
+ * each chart version names the console it installs as its `appVersion`. The
+ * download page asks GitHub for the chart repository's newest
+ * `kubetower-<x.y.z>` tag and substitutes it here; until there is one, the
+ * command is not shown (ChartStatus.astro).
+ */
+export const CHART_VERSION_TOKEN = '{chartVersion}';
+
+const version = VERSION_TOKEN;
+
+export interface Artifact {
+  id: string;
+  /** The square badge before the title. Absent on the Linux cards. */
+  tag?: string;
+  title: string;
+  description: string;
+  /** The button's text: a filename on macOS and Windows, an action on Linux. */
+  label: string;
+  /** The release asset the button points at. */
+  asset: string;
+  size: string;
+  /** The accent button, or the quieter one beside it. */
+  variant: 'primary' | 'secondary';
+  /** The download glyph. The Linux buttons carry none. */
+  icon?: boolean;
+}
+
+export interface CommandSegment {
+  text: string;
+  tone?: 'primary' | 'warning' | 'tertiary';
+  /** The segment is the chart's version, filled in once one is known. */
+  chartVersion?: boolean;
+}
+
+export interface DownloadPlatform {
+  id: string;
+  name: string;
+  /** The icon on the selector card and in the panel header. */
+  icon: string;
+  /** The line under the platform name on the selector card. */
+  blurb: string;
+  /** The selector card's button. */
+  action: string;
+  actionIcon: string;
+  panelTitle: string;
+  panelLede: string;
+  /** What the platform needs, at the foot of the panel. */
+  requirement: string;
+  footerLink: { label: string; href: string; external?: boolean };
+  artifacts?: Artifact[];
+  /** Columns the artefact cards take from md up. */
+  columns?: 2 | 3;
+  /** Kubernetes ships a command rather than files. */
+  command?: CommandSegment[][];
+  /** Shown above the downloads, before anyone clicks one. */
+  notice?: UnsignedNotice;
+}
+
+/** Plain text, with the words a user clicks or reads on screen in bold. */
+export type Rich = (string | { strong: string })[];
+
+/**
+ * What an unsigned build does on first run, and what to do about it.
+ *
+ * Rendered above the download buttons rather than after them, and never hidden
+ * behind the release check: the warning is what a visitor meets first, so the
+ * page says so before the click. Remove it when the builds are signed.
+ */
+export interface UnsignedNotice {
+  title: string;
+  lede: Rich;
+  /** What the system shows, and what to do about it. */
+  steps: { shows: string; what: Rich }[];
+  verify: {
+    lede: string;
+    shell: string;
+    /** {version} is replaced in the browser once the release is known. */
+    lines: string[];
+    result: string;
+  };
+}
+
+/** The checksum file every release publishes. */
+export const checksumsAsset = 'checksums.txt';
+
+
+export const downloadIntro = {
+  titleLead: 'Get',
+  titleAccent: 'kubetower',
+  lede: 'The free, open-source multi-cluster console, for your workstation or your cluster. Single binary, no daemon, no account.',
+} as const;
+
+const macosNotice: UnsignedNotice = {
+  title: 'This build is not signed yet',
+  lede: ['Signing is coming. Until then macOS blocks the first launch, and ', { strong: 'that is expected' }, '.'],
+  steps: [
+    {
+      shows: '“KubeTower” cannot be opened because Apple cannot check it for malicious software.',
+      what: ['In ', { strong: 'System Settings → Privacy & Security' }, ', click ', { strong: 'Open Anyway' }, '.'],
+    },
+  ],
+  verify: {
+    lede: `Check the file, in Terminal, next to ${checksumsAsset}:`,
+    shell: 'Terminal',
+    lines: [`grep 'kubetower-${VERSION_TOKEN}-arm64.dmg' ${checksumsAsset} | shasum -a 256 --check`],
+    result: 'It prints OK. For Intel, use the x64 file name.',
+  },
+};
+
+const windowsNotice: UnsignedNotice = {
+  title: 'This build is not signed yet',
+  lede: ['Signing is coming. Until then Windows warns on the first run, and ', { strong: 'that is expected' }, '.'],
+  steps: [
+    {
+      shows: 'SmartScreen: “Windows protected your PC”.',
+      what: ['Click ', { strong: 'More info' }, ', then ', { strong: 'Run anyway' }, '.'],
+    },
+    {
+      shows: 'Smart App Control: the program is blocked.',
+      what: [{ strong: 'No override exists' }, '. Use the ', { strong: 'Kubernetes' }, ' install instead.'],
+    },
+  ],
+  verify: {
+    lede: `Check the file, in PowerShell, next to ${checksumsAsset}:`,
+    shell: 'PowerShell',
+    lines: [
+      `$file = 'kubetower-${VERSION_TOKEN}-setup.exe'`,
+      `$want = ((Select-String -Path ${checksumsAsset} -SimpleMatch $file).Line -split '\\s+')[0]`,
+      '(Get-FileHash $file -Algorithm SHA256).Hash -eq $want',
+    ],
+    result: 'It prints True. For the zip, put its name in $file.',
+  },
+};
+
+export const downloadPlatforms: DownloadPlatform[] = [
+  {
+    id: 'macos',
+    name: 'macOS',
+    icon: 'lucide:laptop',
+    blurb: 'Apple Silicon and Intel architectures.',
+    action: 'Download for macOS',
+    actionIcon: 'lucide:download',
+    panelTitle: 'Download for macOS',
+    panelLede: 'Native universal packages for Apple Silicon and Intel',
+    requirement: 'Require macOS 12 (Monterey) or later',
+    footerLink: { label: 'View release notes', href: repoLinks.releases, external: true },
+    columns: 2,
+    notice: macosNotice,
+    artifacts: [
+      {
+        id: 'arm64',
+        tag: 'M',
+        title: 'Apple Silicon',
+        description: 'Optimized native binary for Apple silicon hardware acceleration.',
+        label: `kubetower-${version}-arm64.dmg`,
+        asset: `kubetower-${version}-arm64.dmg`,
+        size: '~48.2 MB',
+        variant: 'primary',
+        icon: true,
+      },
+      {
+        id: 'x64',
+        tag: 'x64',
+        title: 'Intel Mac',
+        description: 'Dedicated build for older 64-bit Intel-based Macintosh workstations.',
+        label: `kubetower-${version}-x64.dmg`,
+        asset: `kubetower-${version}-x64.dmg`,
+        size: '~52.1 MB',
+        variant: 'primary',
+        icon: true,
+      },
+    ],
+  },
+  {
+    id: 'windows',
+    name: 'Windows',
+    icon: 'simple-icons:windows',
+    blurb: 'Direct 64-bit installer and portable zip archive.',
+    action: 'Download for Windows',
+    actionIcon: 'lucide:download',
+    panelTitle: 'Download for Windows',
+    panelLede: 'Standalone direct installer and zip package for Windows 10 / 11',
+    requirement: 'Require Windows 10 / 11',
+    footerLink: { label: 'View release notes', href: repoLinks.releases, external: true },
+    columns: 2,
+    notice: windowsNotice,
+    artifacts: [
+      {
+        id: 'exe',
+        tag: 'EXE',
+        title: 'Windows Setup (.exe)',
+        description: 'Standard Windows installation wizard, for your user only, with a Start menu entry.',
+        label: `kubetower-${version}-setup.exe`,
+        asset: `kubetower-${version}-setup.exe`,
+        size: '~56.4 MB',
+        variant: 'primary',
+        icon: true,
+      },
+      {
+        id: 'zip',
+        tag: 'ZIP',
+        title: 'Portable Archive (.zip)',
+        description: 'Zero-install portable binary. Extract and run directly without administrator privileges.',
+        label: `kubetower-${version}-win-x64.zip`,
+        asset: `kubetower-${version}-win-x64.zip`,
+        size: '~53.8 MB',
+        variant: 'secondary',
+        icon: true,
+      },
+    ],
+  },
+  {
+    id: 'linux',
+    name: 'Linux',
+    icon: 'lucide:square-terminal',
+    blurb: 'Debian (.deb), Fedora (.rpm), and AppImage binaries.',
+    action: 'Download for Linux',
+    actionIcon: 'lucide:download',
+    panelTitle: 'Download for Linux',
+    panelLede: 'Universal AppImage and native package distributions',
+    requirement: 'Require glibc 2.28+ / Linux kernel 4.19+',
+    footerLink: { label: 'View release notes', href: repoLinks.releases, external: true },
+    columns: 3,
+    artifacts: [
+      {
+        id: 'deb',
+        title: 'Debian / Ubuntu',
+        description: 'For Ubuntu, Debian, Linux Mint, and Pop!_OS.',
+        label: 'Download .deb',
+        asset: `kubetower-${version}-amd64.deb`,
+        size: '~46.8 MB',
+        variant: 'primary',
+      },
+      {
+        id: 'rpm',
+        title: 'Fedora / RHEL',
+        description: 'For Fedora, Rocky Linux, Alma, and Red Hat Enterprise.',
+        label: 'Download .rpm',
+        asset: `kubetower-${version}-x86_64.rpm`,
+        size: '~47.4 MB',
+        variant: 'primary',
+      },
+      {
+        id: 'appimage',
+        title: 'AppImage',
+        description: 'Universal executable for any Linux distro. Just chmod +x.',
+        label: 'Download .AppImage',
+        asset: `kubetower-${version}-x86_64.AppImage`,
+        size: '~55.2 MB',
+        variant: 'secondary',
+      },
+    ],
+  },
+  {
+    id: 'kubernetes',
+    name: 'Kubernetes',
+    icon: 'simple-icons:kubernetes',
+    blurb: 'OCI Helm chart deployment with secured RBAC.',
+    action: 'Deploy on Cluster',
+    actionIcon: 'lucide:ship-wheel',
+    panelTitle: 'Deploy to Kubernetes',
+    panelLede: 'In-cluster deployment for Kubernetes',
+    requirement: 'Requires Helm v3.8.0+',
+    footerLink: { label: 'Cluster deployment documentation', href: '/docs/helm' },
+    command: [
+      [
+        { text: 'helm', tone: 'primary' },
+        { text: ' install kubetower oci://ghcr.io/thonicdev/charts/kubetower \\' },
+      ],
+      [{ text: '  --version ' }, { text: CHART_VERSION_TOKEN, tone: 'warning', chartVersion: true }, { text: ' \\' }],
+      [{ text: '  --namespace ' }, { text: 'kubetower-system', tone: 'tertiary' }, { text: ' \\' }],
+      [{ text: '  --create-namespace' }],
+    ],
+  },
+];
+
+/**
+ * The command as one line, for the clipboard, with CHART_VERSION_TOKEN where
+ * the chart's version goes: the page substitutes it before the command is
+ * shown, and does not show the command without it.
+ */
+export function commandLine(platform: DownloadPlatform): string {
+  return (platform.command ?? [])
+    .map((line) => line.map((segment) => segment.text).join(''))
+    .map((line) => line.replace(/\s*\\$/, ''))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

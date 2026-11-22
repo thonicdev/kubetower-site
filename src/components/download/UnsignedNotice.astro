@@ -1,0 +1,63 @@
+---
+/**
+ * The unsigned-build notice, above a platform's download buttons.
+ *
+ * Always rendered, never behind the release check: a visitor reads it before
+ * the click, not after Windows or macOS has already refused the file. The
+ * version in the check command shows as <version> until the release script
+ * (ReleaseStatus.astro) knows it, then becomes the real one.
+ */
+import Icon from '../Icon.astro';
+import { VERSION_TOKEN, type Rich, type UnsignedNotice } from '~/config/downloads';
+
+interface Props {
+  notice: UnsignedNotice;
+}
+
+const { notice } = Astro.props;
+
+/** A command line cut at each {version}, so the version can be its own node. */
+const pieces = (line: string) => line.split(VERSION_TOKEN);
+
+const bold = (text: Rich) => text.map((part) => (typeof part === 'string' ? { text: part } : { text: part.strong, strong: true }));
+---
+
+<aside data-unsigned-notice aria-label={notice.title} class="mt-6 rounded-xl border border-warning/40 bg-warning/5 p-5">
+  <div class="flex items-start gap-3">
+    <span class="mt-0.5 shrink-0 text-warning">
+      <Icon name="lucide:shield-alert" size={18} />
+    </span>
+    <div class="min-w-0 flex-1">
+      <h4 class="text-sm font-bold text-white">{notice.title}</h4>
+      <p class="mt-1 text-xs leading-relaxed text-on-surface-variant">
+        {bold(notice.lede).map((part) => (part.strong ? <strong class="font-semibold text-white">{part.text}</strong> : part.text))}
+      </p>
+
+      <div class="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <dl class="space-y-3 text-xs leading-relaxed">
+          {
+            notice.steps.map((step) => (
+              <div>
+                <dt class="font-medium text-on-surface">{step.shows}</dt>
+                <dd class="mt-0.5 text-on-surface-variant">
+                  {bold(step.what).map((part) => (part.strong ? <strong class="font-semibold text-white">{part.text}</strong> : part.text))}
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+
+        <div class="min-w-0 text-xs leading-relaxed">
+          <p class="font-medium text-on-surface">{notice.verify.lede}</p>
+          <pre
+            aria-label={notice.verify.shell}
+            class="mt-2 overflow-x-auto rounded-lg border border-outline-variant bg-surface-container-lowest p-3 font-mono text-[11px] leading-relaxed text-on-surface"><code>{notice.verify.lines.map((line, index) => [
+            ...pieces(line).flatMap((piece, at) => (at > 0 ? [<span class="text-warning" data-release-version>{'<version>'}</span>, piece] : [piece])),
+            index < notice.verify.lines.length - 1 ? '\n' : '',
+          ])}</code></pre>
+          <p class="mt-2 text-on-surface-variant">{notice.verify.result}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>

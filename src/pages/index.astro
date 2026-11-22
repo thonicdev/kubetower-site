@@ -1,0 +1,28 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import ScreenshotSlider from '~/components/home/ScreenshotSlider.astro';
+import FeatureCarousel from '~/components/home/FeatureCarousel.astro';
+import Extras from '~/components/home/Extras.astro';
+import Profiles from '~/components/home/Profiles.astro';
+import Faq from '~/components/home/Faq.astro';
+import { highlights, highlightsIntro } from '~/config/landing';
+import { site } from '~/config/site';
+---
+
+<BaseLayout title={`${site.name} — ${site.tagline}`} bare>
+  <Hero />
+  <ScreenshotSlider />
+
+  <FeatureCarousel
+    id="highlights"
+    title={highlightsIntro.title}
+    lede={highlightsIntro.lede}
+    items={highlights}
+    divider
+  />
+
+  <Extras />
+  <Profiles />
+  <Faq />
+</BaseLayout>

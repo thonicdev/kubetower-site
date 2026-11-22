@@ -1,0 +1,74 @@
+---
+title: Install
+description: Put kubetower on your machine, the flags it takes, and how to remove it.
+order: 2
+---
+
+## Get the binary
+
+There is no release yet. Build it from source as shown in
+[Getting started](/docs#quick-start).
+
+Each release will publish one download per platform and a `checksums.txt`
+file. Check your download before running it:
+
+```bash
+sha256sum -c checksums.txt --ignore-missing
+```
+
+## Install it
+
+The binary installs itself, for your user only. It never asks for admin rights.
+
+```bash
+./kubetower --install
+```
+
+| System | Where it goes |
+| --- | --- |
+| macOS | `~/Applications/KubeTower.app` |
+| Windows | `%LOCALAPPDATA%\Programs\KubeTower`, plus a Start menu entry |
+| Linux | `~/.local/bin/kubetower`, plus an application launcher |
+
+## Flags
+
+| Flag | What it does |
+| --- | --- |
+| *(none)* | Starts the console on `127.0.0.1:5823` |
+| `--app` | Opens the console in its own window |
+| `--no-window` | Starts the server only, opens nothing |
+| `--unattended` | No dialog, for scripts and services |
+| `--install` | Installs kubetower for your user |
+| `--uninstall` | Removes it, keeps your settings |
+| `--reset-password` | Creates a new password, shows it once |
+| `--version` | Prints the version |
+| `--help` | Prints the flags |
+
+On Windows, `--app` uses a native window. On macOS and Linux it opens a Chrome
+or Edge window without tabs, or your usual browser if neither is installed.
+
+## Your data
+
+kubetower keeps its data in one folder: `~/.kubetower` (change it with
+`KT_STATE_DIR`). Terminals also use a temporary folder.
+
+| File | What it holds |
+| --- | --- |
+| `credentials.json` | Your password hash and session key. **Keep it.** |
+| `kubetower.log` | The log |
+| `*.json` | Your layout and preferences |
+| `archive/` | Recent cluster events |
+
+Everything except `credentials.json` can be deleted safely.
+
+kubetower **never writes to your kubeconfig**.
+
+## Uninstall
+
+```bash
+kubetower --uninstall
+rm -rf ~/.kubetower
+```
+
+On Windows, if the uninstall says so, delete
+`%LOCALAPPDATA%\Programs\KubeTower` by hand.

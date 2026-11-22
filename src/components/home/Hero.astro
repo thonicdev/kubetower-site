@@ -1,0 +1,108 @@
+---
+import Icon from '../Icon.astro';
+import SpecStrip from './SpecStrip.astro';
+import { hero } from '~/config/landing';
+import { project, repoLinks } from '~/config/project';
+import { withBase } from '~/lib/paths';
+---
+
+<section class="relative mx-auto max-w-6xl px-6 pt-12 pb-6 sm:pt-16">
+  <!-- Ambient mesh. Purely decorative, so it is hidden from assistive tech and
+       stops animating when the visitor asks for less motion (global.css).
+
+       Every orb is capped at the section's own width. Without that the widest
+       one (760px) is wider than a phone, and an absolutely positioned element
+       that overhangs the viewport widens the *document* - which on mobile
+       widens the layout viewport, which is the containing block a fixed header
+       sizes itself against. Measured 2026-09-21 at 390px: the document came
+       out 575px wide and the header with it. The orbs are blurred by 110-140px,
+       so capping the box costs nothing visible. -->
+  <div aria-hidden="true">
+    <div
+      class="pointer-events-none absolute -top-16 left-1/2 h-[360px] w-[760px] max-w-full -translate-x-1/2 animate-glow-mesh rounded-full bg-primary/15 blur-[140px]"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute top-48 right-4 h-72 w-72 max-w-[85%] animate-float-slow rounded-full bg-secondary/15 blur-[120px] sm:right-10"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute top-36 left-4 h-60 w-60 max-w-[85%] animate-float-slow rounded-full bg-tertiary/10 blur-[110px]"
+      style="animation-delay: -3s;"
+    >
+    </div>
+  </div>
+
+  <div class="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+    <p
+      class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-primary/30 bg-surface-container px-3.5 py-1.5 text-xs font-medium text-on-surface"
+    >
+      {
+        hero.eyebrow.map((item, i) => (
+          <Fragment>
+            {i > 0 && (
+              <span class="text-outline" aria-hidden="true">
+                •
+              </span>
+            )}
+            <span class:list={[i === 0 && 'text-primary']}>{item}</span>
+          </Fragment>
+        ))
+      }
+    </p>
+
+    <h1 class="text-4xl leading-[1.1] font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+      {
+        hero.titleLead.map((line, i) => (
+          <Fragment>
+            {i > 0 && <br class="sm:hidden" />}
+            {line}{' '}
+          </Fragment>
+        ))
+      }
+      <br />
+      <span class="bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">
+        {hero.titleAccent}
+      </span>
+    </h1>
+
+    <p class="max-w-2xl leading-relaxed text-on-surface-variant sm:text-lg">{hero.lede}</p>
+
+    <div class="mt-6 flex flex-wrap items-center justify-center gap-3.5">
+      <a
+        href={withBase('/download')}
+        class="flex items-center gap-2.5 rounded-xl bg-primary px-7 py-3.5 text-base font-semibold text-on-primary shadow-sm transition-all hover:bg-primary-fixed hover:shadow-[0_0_20px_rgba(76,215,246,0.35)] active:scale-95"
+      >
+        <Icon name="lucide:download" size={20} />
+        Get kubetower
+      </a>
+      {
+        project.repoPublic ? (
+          <a
+            href={repoLinks.repo}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2.5 rounded-xl border border-outline-variant bg-surface-container px-7 py-3.5 text-base font-medium text-white transition-colors hover:border-primary/40 hover:bg-surface-container-high active:scale-95"
+          >
+            <Icon name="simple-icons:github" size={19} />
+            View on GitHub
+          </a>
+        ) : (
+          <a
+            href={withBase('/docs')}
+            class="flex items-center gap-2.5 rounded-xl border border-outline-variant bg-surface-container px-7 py-3.5 text-base font-medium text-white transition-colors hover:border-primary/40 hover:bg-surface-container-high active:scale-95"
+          >
+            <Icon name="lucide:book-open" size={19} />
+            Read the docs
+          </a>
+        )
+      }
+    </div>
+  </div>
+
+  <p class="relative z-10 mt-4 text-center text-sm text-on-surface-variant">{hero.releaseNote}</p>
+
+  <div class="relative z-10 mx-auto mt-8 max-w-5xl">
+    <SpecStrip />
+  </div>
+</section>

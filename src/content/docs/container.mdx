@@ -1,0 +1,77 @@
+---
+title: Run in a container
+description: The same console in a Docker image, with your kubeconfig mounted read-only.
+order: 4
+---
+
+## Build the image
+
+No image is published yet. Build it from the repository:
+
+```bash
+git clone https://github.com/thonicdev/kubetower
+cd kubetower
+docker build -t kubetower:local .
+```
+
+## Run it
+
+```bash
+docker run --rm \
+  -p 127.0.0.1:5823:5823 \
+  -p 127.0.0.1:30000-30031:30000-30031 \
+  -e KT_FORWARD_PORTS=30000-30031 \
+  -v "$HOME/.kube:/home/kubetower/.kube:ro" \
+  -v kubetower-state:/var/lib/kubetower \
+  kubetower:local
+```
+
+Read the password in the container log, then open **http://127.0.0.1:5823**.
+
+| Line | Why |
+| --- | --- |
+| `-p …:5823` | The console |
+| `-p …:30000-30031` and `KT_FORWARD_PORTS` | So port-forwards are reachable from your browser |
+| `.kube:…:ro` | Your clusters, read-only |
+| `kubetower-state` | Keeps your password and settings between runs |
+
+On a Linux host, the container runs as uid 100: your kubeconfig must be
+readable by it, and `~/.aws` writable.
+
+## What is inside
+
+| | |
+| --- | --- |
+| Base | Alpine, with `kubectl`, `helm`, `aws` and `claude` |
+| User | Not root (uid 100) |
+| Port | `5823` |
+| Data | `/var/lib/kubetower` |
+
+## Set the password in advance
+
+Set `KT_PASSWORD_HASH` to a **bcrypt hash**, never the password itself.
+
+In a Compose file, double every `$` (`$$2a$$14$$…`). Check that the full hash
+arrived:
+
+```bash
+docker compose exec kubetower sh -c 'echo ${#KT_PASSWORD_HASH}'   # must print 60
+```
+
+## Local clusters (kind, k3d, minikube)
+
+A cluster on `127.0.0.1` is unreachable from inside the container. Add:
+
+```bash
+--add-host host.docker.internal:host-gateway
+```
+
+kubetower then redirects those clusters to your host automatically.
+
+## EKS
+
+Mount `~/.aws` **read-write**, so the AWS CLI can renew your SSO session:
+
+```bash
+-v "$HOME/.aws:/home/kubetower/.aws"
+```
