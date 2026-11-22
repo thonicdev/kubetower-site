@@ -1,0 +1,32 @@
+---
+/**
+ * A surface whose border lights up under the pointer.
+ *
+ * The gradient ring itself is in global.css (`.spotlight`); this only supplies
+ * the accent and the element. The pointer tracking is attached once, in
+ * BaseLayout, to every `.spotlight` on the page.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+type Tone = 'primary' | 'secondary' | 'tertiary' | 'error';
+
+interface Props extends HTMLAttributes<'a'> {
+  /** Rendered element. `a` when the whole card is a link. */
+  as?: 'div' | 'a' | 'article' | 'li';
+  tone?: Tone;
+  class?: string;
+}
+
+const { as: Tag = 'div', tone = 'primary', class: className, ...rest } = Astro.props;
+
+const accents: Record<Tone, string> = {
+  primary: 'var(--color-primary)',
+  secondary: 'var(--color-secondary)',
+  tertiary: 'var(--color-tertiary)',
+  error: 'var(--color-error)',
+};
+---
+
+<Tag class:list={['spotlight', className]} style={`--spotlight-color: ${accents[tone]}`} {...rest}>
+  <slot />
+</Tag>

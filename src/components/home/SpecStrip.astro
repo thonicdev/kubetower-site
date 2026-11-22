@@ -1,0 +1,36 @@
+---
+import { specs } from '~/config/release';
+
+const dots: Record<string, string> = {
+  primary: 'bg-primary',
+  tertiary: 'bg-tertiary',
+  secondary: 'bg-secondary',
+  neutral: 'bg-on-surface',
+};
+
+const hovers: Record<string, string> = {
+  primary: 'group-hover:text-primary',
+  tertiary: 'group-hover:text-tertiary',
+  secondary: 'group-hover:text-secondary',
+  neutral: 'group-hover:text-white',
+};
+---
+
+<dl class="flex flex-wrap items-center justify-center gap-6 text-xs text-on-surface-variant sm:gap-10">
+  {
+    specs.map((spec) => (
+      <div class="group flex cursor-default items-center gap-2">
+        <span class="relative flex h-1.5 w-1.5">
+          {spec.pulse && (
+            <span
+              class:list={['absolute inline-flex h-full w-full animate-ping rounded-full opacity-75', dots[spec.tone]]}
+            />
+          )}
+          <span class:list={['relative inline-flex h-1.5 w-1.5 rounded-full', dots[spec.tone]]} />
+        </span>
+        <dt>{spec.label}:</dt>
+        <dd class:list={['font-semibold text-white transition-colors', hovers[spec.tone]]}>{spec.value}</dd>
+      </div>
+    ))
+  }
+</dl>

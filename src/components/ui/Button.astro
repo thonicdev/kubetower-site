@@ -1,0 +1,37 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { withBase } from '~/lib/paths';
+
+type Variant = 'primary' | 'surface' | 'ghost';
+
+interface Props extends HTMLAttributes<'a'> {
+  href: string;
+  variant?: Variant;
+  external?: boolean;
+  class?: string;
+}
+
+const { href, variant = 'primary', external = false, class: className, ...rest } = Astro.props;
+
+const variants: Record<Variant, string> = {
+  primary:
+    'bg-primary text-on-primary font-semibold hover:bg-primary-fixed hover:shadow-[0_0_20px_rgba(76,215,246,0.35)]',
+  surface:
+    'bg-surface-container text-white border border-outline-variant hover:bg-surface-container-high hover:border-primary/40',
+  ghost: 'text-on-surface-variant hover:text-white',
+};
+---
+
+<a
+  href={external ? href : withBase(href)}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+  class:list={[
+    'inline-flex items-center gap-2 rounded-lg px-4 py-2 font-mono text-xs transition-all duration-200 active:scale-95',
+    variants[variant],
+    className,
+  ]}
+  {...rest}
+>
+  <slot />
+</a>

@@ -1,0 +1,24 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+import Button from '~/components/ui/Button.astro';
+import Icon from '~/components/Icon.astro';
+---
+
+<PageLayout
+  title="Not found"
+  eyebrow="404"
+  heading="That page is not here"
+  lede="The link may be old, or the page may not be written yet. Both happen on a site for something still being built."
+  description="The page you asked for does not exist."
+>
+  <div class="flex flex-wrap gap-3">
+    <Button href="/">
+      <Icon name="lucide:arrow-right" size={15} />
+      Home
+    </Button>
+    <Button href="/docs" variant="surface">
+      <Icon name="lucide:book-open" size={15} class="text-primary" />
+      Documentation
+    </Button>
+  </div>
+</PageLayout>

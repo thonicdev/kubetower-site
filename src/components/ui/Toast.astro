@@ -1,0 +1,13 @@
+---
+import Icon from '../Icon.astro';
+---
+
+<div
+  id="toast"
+  role="status"
+  aria-live="polite"
+  class="pointer-events-none fixed right-6 bottom-6 z-50 flex translate-y-20 items-center gap-2.5 rounded-xl border border-primary/40 bg-surface-container-high px-4 py-3 font-mono text-xs text-white opacity-0 shadow-2xl transition-all duration-300"
+>
+  <Icon name="lucide:check" size={16} class="text-tertiary" />
+  <span id="toast-message"></span>
+</div>
