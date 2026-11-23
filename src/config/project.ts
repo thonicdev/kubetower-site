@@ -2,7 +2,7 @@
  * Where the console lives, and whether a visitor can get there.
  */
 export const project = {
-  /** The console's repository. Opens to the public with the first public release (0.2). */
+  /** The console's repository, public since 0.1.0. */
   repoUrl: 'https://github.com/thonicdev/kubetower',
 
   /**
@@ -11,7 +11,7 @@ export const project = {
    * into it: while it is private every one of them is a 404 for a visitor.
    * Set it to true the day the repository opens.
    */
-  repoPublic: false,
+  repoPublic: true,
 
   /** The site's own repository, which is public and can always be linked. */
   siteRepoUrl: 'https://github.com/thonicdev/kubetower-site',
