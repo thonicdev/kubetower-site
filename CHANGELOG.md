@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/thonicdev/kubetower-site/compare/v0.2.1...v0.3.0) (2026-11-23)
+
+
+### Features
+
+* link the console's repository now that it is public ([#2](https://github.com/thonicdev/kubetower-site/issues/2)) ([8d5ea6c](https://github.com/thonicdev/kubetower-site/commit/8d5ea6c13b1275985dcfb976bbe51e258f903bb8))
+
 ## [0.2.1](https://github.com/thonicdev/kubetower-site/compare/v0.2.0...v0.2.1) (2026-11-18)
 
 
